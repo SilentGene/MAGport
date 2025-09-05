@@ -2,43 +2,52 @@
 
 QUALITY_DIR = RESULTS / "quality"
 
-rule quality_checkm2:
+# 运行 CheckM2 分析整个文件夹
+rule run_checkm2:
     conda: ENV["checkm2"]
     input:
-        mag=lambda wc: SAMPLES[wc.sample]
+        mags=MAGS  # 使用所有MAG文件
+    output:
+        summary=QUALITY_DIR / "summary.tsv"
+    params:
+        db=str(CHECKM2_DB / "uniref100.KO.1.dmnd"),
+        input_dir=INPUT_DIR
+    threads: THREADS
+    shell:
+        r"""
+        mkdir -p {QUALITY_DIR}
+        checkm2 predict --threads {threads} --input {params.input_dir} --output-directory {QUALITY_DIR} --database_path {params.db}
+        """
+
+# 为每个MAG从summary文件提取结果
+rule quality_checkm2:
+    input:
+        summary=QUALITY_DIR / "summary.tsv"
     output:
         tsv=str(QUALITY_DIR / "{sample}.checkm2.tsv")
-    params:
-        db=str(CHECKM2_DB / "uniref100.KO.1.dmnd")
-    threads: THREADS
     run:
-        shell(r"""
-        mkdir -p {QUALITY_DIR}
-        checkm2 predict --threads {threads} --input {input.mag} --output-directory {QUALITY_DIR} --database {params.db} --force
-        # Convert CheckM2 JSON/TSV to a simple TSV per MAG
-        python - <<'PY'
-import json, csv, os
-from pathlib import Path
-mag = Path("{input.mag}") 
-outdir = Path("{QUALITY_DIR}")
-stem = Path("{input.mag}").stem  
-# Expect a summary.tsv; if not present, create minimal
-summary_tsv = outdir/"summary.tsv"
-row = {"mag": stem, "completeness": "", "contamination": ""}
-if summary_tsv.exists():
-    import pandas as pd
-    df = pd.read_csv(summary_tsv, sep='\t')
-    m = df[df['genome'].astype(str).str.contains(stem, na=False)]
-    if not m.empty:
-        r = m.iloc[0]
-        row["completeness"] = r.get("Completeness", r.get("completeness", ""))
-        row["contamination"] = r.get("Contamination", r.get("contamination", ""))
-with open("{output.tsv}", 'w', newline='') as f:
-    w = csv.writer(f, delimiter='\t')
-    w.writerow(["mag","checkm_completeness","checkm_contamination"]) 
-    w.writerow([row['mag'], row['completeness'], row['contamination']])
-PY
-        """)
+        import pandas as pd
+        import csv
+        
+        # 读取summary文件
+        df = pd.read_csv(input.summary, sep='\t')
+        
+        # 获取当前MAG的结果
+        mag_name = wildcards.sample
+        row = {"mag": mag_name, "completeness": "", "contamination": ""}
+        
+        # 在summary中查找当前MAG
+        m = df[df['genome'].astype(str).str.contains(mag_name, na=False)]
+        if not m.empty:
+            r = m.iloc[0]
+            row["completeness"] = r.get("Completeness", r.get("completeness", ""))
+            row["contamination"] = r.get("Contamination", r.get("contamination", ""))
+        
+        # 写入单个MAG的结果文件
+        with open(output.tsv, 'w', newline='') as f:
+            w = csv.writer(f, delimiter='\t')
+            w.writerow(["mag","checkm_completeness","checkm_contamination"])
+            w.writerow([row['mag'], row['completeness'], row['contamination']])
 
 rule quality_checkm1:
     conda: ENV["checkm1"]
