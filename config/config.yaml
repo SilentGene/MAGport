@@ -1,0 +1,17 @@
+# Global MAGport configuration (can be overridden via CLI --config key=val)
+# Paths will be created if missing.
+
+checkm2_db_dir: resources/checkm2_db
+checkm1_db_dir: resources/checkm1_db
+gunc_db_dir: resources/gunc_db
+ncbi16s_dir: resources/ncbi_16s
+
+gtdbtk_db_dir: resources/gtdbtk
+# Note: Downloading and using GTDB-Tk requires acceptance of license/terms and large downloads.
+# You may point this to an existing GTDB-Tk release path.
+
+# Tool switches
+use_checkm: checkm2  # options: checkm2, checkm1
+
+# Reporting
+report_title: MAGport Report

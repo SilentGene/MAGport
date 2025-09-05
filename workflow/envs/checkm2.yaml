@@ -1,0 +1,5 @@
+name: magport-checkm2
+dependencies:
+  - conda-forge::python>3.12
+  - bioconda::checkm2>=1.0
+  - conda-forge::pandas

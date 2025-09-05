@@ -1,0 +1,104 @@
+# MAGport Snakefile
+# Orchestrates modular MAG characterization
+
+import os
+from pathlib import Path
+
+configfile: "config/config.yaml"
+
+# CLI-provided config keys (with defaults):
+INPUT_DIR = Path(config.get("input_dir", "input")).resolve()
+OUTPUT_DIR = Path(config.get("output_dir", "results")).resolve()
+EXT = config.get("file_extension", ".fasta")
+THREADS = int(config.get("threads", 8))
+MODULES = set((config.get("modules", "stats,quality,park,gunc,rrna,trna,orfs,gtdb,rrna16S,mimag").split(',')))
+USE_CHECKM = config.get("use_checkm", "checkm2")
+
+# I/O structure
+RESULTS = OUTPUT_DIR / "results"
+LOGS = OUTPUT_DIR / "results" / "logs"
+SUMMARY_TSV = OUTPUT_DIR / "MAGport_summary.tsv"
+REPORT_HTML = OUTPUT_DIR / "MAGport_report.html"
+
+# Databases
+CHECKM2_DB = Path(config.get("checkm2_db_dir", "resources/checkm2_db"))
+CHECKM1_DB = Path(config.get("checkm1_db_dir", "resources/checkm1_db"))
+GUNC_DB = Path(config.get("gunc_db_dir", "resources/gunc_db"))
+NCBI16S_DIR = Path(config.get("ncbi16s_dir", "resources/ncbi_16s"))
+GTDBTK_DB = Path(config.get("gtdbtk_db_dir", "resources/gtdbtk"))
+
+# Discover MAGs
+MAGS = sorted([str(p) for p in INPUT_DIR.glob(f"**/*{EXT}")])
+SAMPLES = {Path(p).stem: str(Path(p).resolve()) for p in MAGS}
+SAMPLE_LIST = sorted(SAMPLES.keys())
+
+if not MAGS:
+    print(f"[MAGport] No MAGs found in {INPUT_DIR} with extension {EXT}. The workflow may do nothing.")
+
+# Targets
+def per_mag_outputs(module: str):
+    outs = []
+    if module == "stats":
+    outs = [RESULTS/"seqkit"/(s+".seqkit.tsv") for s in SAMPLE_LIST]
+    elif module == "quality":
+        suf = ".checkm2.tsv" if USE_CHECKM == "checkm2" else ".checkm1.tsv"
+    outs = [RESULTS/"quality"/(s+suf) for s in SAMPLE_LIST]
+    elif module == "park":
+    outs = [RESULTS/"park"/(s+".park.tsv") for s in SAMPLE_LIST]
+    elif module == "gunc":
+    outs = [RESULTS/"gunc"/(s+".gunc.tsv") for s in SAMPLE_LIST]
+    elif module == "rrna":
+    outs = [RESULTS/"rrna"/(s+".rrna.tsv") for s in SAMPLE_LIST]
+    elif module == "trna":
+    outs = [RESULTS/"trna"/(s+".trna.tsv") for s in SAMPLE_LIST]
+    elif module == "orfs":
+    outs = [RESULTS/"orfs"/(s+".orfs.tsv") for s in SAMPLE_LIST]
+    elif module == "gtdb":
+    outs = [RESULTS/"gtdbtk"/(s+".gtdb.tsv") for s in SAMPLE_LIST]
+    elif module == "rrna16S":
+    outs = [RESULTS/"16S"/(s+".16S.tsv") for s in SAMPLE_LIST]
+    elif module == "mimag":
+    outs = [RESULTS/"mimag"/(s+".mimag.tsv") for s in SAMPLE_LIST]
+    return outs
+
+SELECTED = [m for m in [
+    "stats","quality","park","gunc","rrna","trna","orfs","gtdb","rrna16S","mimag"
+] if m in MODULES]
+
+rule all:
+    input:
+        *(o for m in SELECTED for o in per_mag_outputs(m)),
+        SUMMARY_TSV,
+        REPORT_HTML
+
+# Utility: determine domain for barrnap (requires GTDB-Tk output)
+# This is simplified and handled in the python script.
+
+# Envs
+ENV = {
+    "seqkit": "workflow/envs/seqkit.yaml",
+    "checkm2": "workflow/envs/checkm2.yaml",
+    "checkm1": "workflow/envs/checkm1.yaml",
+    "gunc": "workflow/envs/gunc.yaml",
+    "barrnap": "workflow/envs/barrnap.yaml",
+    "trnascan": "workflow/envs/trnascan.yaml",
+    "prodigal": "workflow/envs/prodigal.yaml",
+    "gtdbtk": "workflow/envs/gtdbtk.yaml",
+    "diamond": "workflow/envs/diamond.yaml",
+    "python": "workflow/envs/python.yaml",
+}
+
+# Include rules
+include: "rules/databases.smk"
+include: "rules/stats.smk"
+include: "rules/quality.smk"
+include: "rules/park.smk"
+include: "rules/gunc.smk"
+include: "rules/rrna.smk"
+include: "rules/trna.smk"
+include: "rules/orfs.smk"
+include: "rules/gtdb.smk"
+include: "rules/rrna16s.smk"
+include: "rules/mimag.smk"
+include: "rules/collect.smk"
+include: "rules/report.smk"

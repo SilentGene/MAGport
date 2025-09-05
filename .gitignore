@@ -1,0 +1,11 @@
+.snakemake/
+__pycache__/
+*.pyc
+.env/
+.venv/
+resources/
+results/
+MAGport_report.html
+MAGport_summary.tsv
+new_prompt.md
+WORKFLOW_NOTES.md

@@ -1,0 +1,7 @@
+name: magport-python
+dependencies:
+  - conda-forge::python=3.10
+  - conda-forge::pandas
+  - conda-forge::numpy
+  - conda-forge::jinja2
+  - conda-forge::plotly

@@ -1,0 +1,6 @@
+name: magport-seqkit
+dependencies:
+  - conda-forge::python=3.10
+  - bioconda::seqkit>=2.6
+  - conda-forge::sed
+  - conda-forge::awk
