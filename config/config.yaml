@@ -4,8 +4,8 @@
 checkm2_db_dir: "/mnt/hpccs01/work/microbiome/db/CheckM2_database/"
 checkm1_db_dir: ""
 gunc_db_dir: "/mnt/hpccs01/work/microbiome/db/gunc/1.0.1/"
-ncbi16s_dir: ""
-gtdbtk_db_dir: "/mnt/hpccs01/work/microbiome/db/gtdb/gtdb_release226/"
+ncbi16s_dir: "/mnt/hpccs01/work/microbiome/users/heyu/db/ncbi_16S/"
+gtdbtk_db_dir: "/work/microbiome/db/gtdb/gtdb_release226/auxillary_files/gtdbtk_package/full_package/release226"
 
 
 # Tool switches

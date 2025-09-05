@@ -7,4 +7,4 @@ resources/
 results/
 magport.egg-info/
 new_prompt.md
-.dag.svg
+dag.svg

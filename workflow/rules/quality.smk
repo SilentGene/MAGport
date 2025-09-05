@@ -9,7 +9,7 @@ rule quality_checkm2:
     output:
         tsv=str(QUALITY_DIR / "{sample}.checkm2.tsv")
     params:
-        db=CHECKM2_DB
+        db=str(CHECKM2_DB / "uniref100.KO.1.dmnd")
     threads: THREADS
     run:
         shell(r"""
@@ -19,9 +19,9 @@ rule quality_checkm2:
         python - <<'PY'
 import json, csv, os
 from pathlib import Path
-mag = Path(r"{input.mag}")
-outdir = Path(r"{QUALITY_DIR}")
-stem = mag.stem
+mag = Path("{input.mag}") 
+outdir = Path("{QUALITY_DIR}")
+stem = Path("{input.mag}").stem  
 # Expect a summary.tsv; if not present, create minimal
 summary_tsv = outdir/"summary.tsv"
 row = {"mag": stem, "completeness": "", "contamination": ""}
@@ -33,7 +33,7 @@ if summary_tsv.exists():
         r = m.iloc[0]
         row["completeness"] = r.get("Completeness", r.get("completeness", ""))
         row["contamination"] = r.get("Contamination", r.get("contamination", ""))
-with open(r"{output.tsv}", 'w', newline='') as f:
+with open("{output.tsv}", 'w', newline='') as f:
     w = csv.writer(f, delimiter='\t')
     w.writerow(["mag","checkm_completeness","checkm_contamination"]) 
     w.writerow([row['mag'], row['completeness'], row['contamination']])

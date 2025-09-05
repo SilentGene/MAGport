@@ -9,15 +9,18 @@ rule gtdbtk_classify:
     output:
         tsv=str(GTDB_DIR / "{sample}.gtdb.tsv")
     params:
-        db=GTDBTK_DB
+        pplacer=3,
+        suffix=EXT
     threads: THREADS
     shell:
         r"""
         mkdir -p {GTDB_DIR}
+        # Set GTDBTK_DATA_PATH environment variable
+        export GTDBTK_DATA_PATH={GTDBTK_DB}
         # Get just the filename without path
         mag_name=$(basename "{input.mag}")
         # Run GTDB-Tk classify_wf on a single genome (may be inefficient; for many MAGs, batch externally)
-        gtdbtk classify_wf --genome_dir {INPUT_DIR} --out_dir {GTDB_DIR} --prefix run --cpus {threads} --data_dir {params.db} || true
+        gtdbtk classify_wf --genome_dir {INPUT_DIR} --out_dir {GTDB_DIR} --prefix run --cpus {threads} --pplacer {params.pplacer} -x {params.suffix} --skip_ani_screen || true
         # Extract lineage for this MAG
         echo -e "lineage" > {output.tsv}
         if [ -s {GTDB_DIR}/run.bac120.summary.tsv ]; then
