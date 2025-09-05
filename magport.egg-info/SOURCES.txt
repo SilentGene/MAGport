@@ -1,0 +1,11 @@
+LICENSE
+README.md
+pyproject.toml
+magport/__init__.py
+magport/cli.py
+magport.egg-info/PKG-INFO
+magport.egg-info/SOURCES.txt
+magport.egg-info/dependency_links.txt
+magport.egg-info/entry_points.txt
+magport.egg-info/requires.txt
+magport.egg-info/top_level.txt

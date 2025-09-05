@@ -5,10 +5,10 @@ R16_DIR = RESULTS / "16S"
 rule rrna16s_diamond:
     conda: ENV["diamond"]
     input:
-    fasta=lambda wc: RESULTS / "rrna" / (wc.sample + ".16S.fasta"),
+        fasta=lambda wc: RESULTS / "rrna" / (wc.sample + ".16S.fasta"),
         db=NCBI16S_DIR / "16S_ribosomal_RNA.dmnd"
     output:
-    tsv=str(R16_DIR / "{sample}.16S.tsv")
+        tsv=str(R16_DIR / "{sample}.16S.tsv")
     threads: THREADS
     run:
         shell(r"""

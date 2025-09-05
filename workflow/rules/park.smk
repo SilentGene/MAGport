@@ -5,8 +5,8 @@ PARK_DIR = RESULTS / "park"
 rule park_score:
     conda: ENV["python"]
     input:
-    stats=lambda wc: RESULTS / "seqkit" / (wc.sample + ".seqkit.tsv"),
-    qual=lambda wc: RESULTS / "quality" / (wc.sample + f".{ 'checkm2' if USE_CHECKM=='checkm2' else 'checkm1' }.tsv"),
+        stats=lambda wc: RESULTS / "seqkit" / (wc.sample + ".seqkit.tsv"),
+        qual=lambda wc: RESULTS / "quality" / (wc.sample + f".{ 'checkm2' if USE_CHECKM=='checkm2' else 'checkm1' }.tsv"),
     output:
         tsv=str(PARK_DIR / "{sample}.park.tsv")
     shell:

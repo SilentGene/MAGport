@@ -5,11 +5,11 @@ ORF_DIR = RESULTS / "orfs"
 rule orfs_prodigal:
     conda: ENV["prodigal"]
     input:
-    mag=lambda wc: SAMPLES[wc.sample]
+        mag=lambda wc: SAMPLES[wc.sample]
     output:
-    faa=str(ORF_DIR / "{sample}.proteins.faa"),
-    gff=str(ORF_DIR / "{sample}.prodigal.gff"),
-    tsv=str(ORF_DIR / "{sample}.orfs.tsv")
+        faa=str(ORF_DIR / "{sample}.proteins.faa"),
+        gff=str(ORF_DIR / "{sample}.prodigal.gff"),
+        tsv=str(ORF_DIR / "{sample}.orfs.tsv")
     threads: 1
     shell:
         r"""

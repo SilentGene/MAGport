@@ -1,55 +1,125 @@
-MAGport: A Snakemake Pipeline for MAG Characterization
+# MAGport 🧬
 
-Overview
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-MAGport is a modular Snakemake workflow to characterize Metagenome-Assembled Genomes (MAGs): basic stats, quality (CheckM2/CheckM1), chimerism (GUNC), rRNA (barrnap), tRNA (tRNAscan-SE), ORFs (Prodigal), taxonomy (GTDB-Tk), 16S-based taxonomy (DIAMOND), Park score, and MIMAG classification. It produces an interactive HTML report and a consolidated TSV.
+A Snakemake pipeline for comprehensive characterization of Metagenome-Assembled Genomes (MAGs).
 
-Quick start
+The name "MAGport" has multiple meaningful interpretations:
+   - **Ports** MAGs through various analysis tools for characterization
+   - **Reports** the results in an integrated, interactive format
+   - **Passport**: Creates a comprehensive "passport" for each MAG
 
-Prereqs: Conda/Mamba (recommended) or Pixi. Pip install is provided for the Python CLI, while bio tools are resolved via per-rule Conda envs in Snakemake.
 
-Install (recommended)
+## 🔍 Overview
 
-- Using Conda/Mamba for environments created by Snakemake (no manual env creation required):
+MAGport is a modular workflow that provides:
 
-  - Option A: Use the CLI without installing the package (local run):
-    1. Ensure mamba/conda is available on PATH.
-    2. Run the CLI via Python: python -m magport --help
+- Basic genome statistics (SeqKit)
+- Quality assessment (CheckM2/CheckM1)
+- Chimerism detection (GUNC)
+- rRNA prediction (barrnap)
+- tRNA scanning (tRNAscan-SE)
+- Gene prediction (Prodigal)
+- Taxonomic classification (GTDB-Tk)
+- 16S-based taxonomy (DIAMOND)
+- Park score calculation
+- MIMAG quality classification
 
-  - Option B: Install the CLI:
-    pip install -e .
+**Outputs:** Interactive HTML report and consolidated TSV summary.
 
-Pixi (optional)
+## 🚀 Quick Start
 
-If you prefer Pixi, you can create a project environment and run Snakemake; however, per-rule envs are still created by Snakemake.
+### Prerequisites
 
-Run
+- **Recommended:** Conda/Mamba for environment management
+- **Alternative:** Pixi (note: Snakemake will still create per-rule Conda envs)
+- Python 3.9 or later
 
-magport --input_dir <mags_dir> --output_dir <results_dir> --threads 16 --file_extension .fa
+### Installation
 
-Tip: test a dry run first:
+Choose one of these methods:
 
+1. **Direct Use** (no installation):
+   ```bash
+   # Ensure conda/mamba is in PATH
+   python -m magport --help
+   ```
+
+2. **CLI Installation**:
+   ```bash
+   pip install -e .
+   ```
+
+3. **Pixi** (optional):
+   ```bash
+   # Create and activate pixi environment
+   pixi run snakemake
+   ```
+
+### Basic Usage
+
+Run the pipeline:
+```bash
+magport --input_dir <mags_dir> \
+        --output_dir <results_dir> \
+        --threads 16 \
+        --file_extension .fa
+```
+
+Start with a dry run:
+```bash
 magport -i <mags_dir> -o <results_dir> --threads 4 --snake_args "-n"
+```
 
-Modules
+## 📦 Modules
 
---modules can restrict execution (comma-separated). Default runs all:
-stats,quality,park,gunc,rrna,trna,orfs,gtdb,rrna16S,mimag
+Select specific modules with `--modules` (comma-separated):
 
-Databases
+| Category | Modules |
+|----------|---------|
+| Stats    | `stats` |
+| Quality  | `quality`, `park`, `gunc`, `mimag` |
+| Features | `rrna`, `trna`, `orfs` |
+| Taxonomy | `gtdb`, `rrna16S` |
 
-- CheckM2 DB: auto-download rule (config.checkm2_db_dir).
-- GUNC DB: auto-download rule (config.gunc_db_dir).
-- GTDB-Tk DB: requires manual acceptance; rule provided but may need user action (config.gtdbtk_db_dir).
-- NCBI 16S DB: auto-download, convert to FASTA, and build DIAMOND DB (config.ncbi16s_dir).
+Default: All modules enabled.
 
-Outputs
+## 🗄️ Databases
 
-- MAGport_report.html – interactive report.
-- MAGport_summary.tsv – consolidated table.
-- results/... – per-tool outputs.
+| Database | Setup | Configuration |
+|----------|-------|---------------|
+| CheckM2  | Auto-download | `config.checkm2_db_dir` |
+| GUNC     | Auto-download | `config.gunc_db_dir` |
+| GTDB-Tk  | Manual setup required | `config.gtdbtk_db_dir` |
+| NCBI 16S | Auto-download & build | `config.ncbi16s_dir` |
 
-Notes
+## 📊 Outputs
 
-- On first run, Snakemake will create per-rule Conda envs under .snakemake/conda.
-- Windows users: Prefer running in an Anaconda Prompt or Mamba PowerShell; Snakemake shells will execute in POSIX-compatible environments within Conda where needed.
+```
+results/
+├── MAGport_report.html    # Interactive visualization
+├── MAGport_summary.tsv    # Consolidated results
+└── results/              
+    ├── seqkit/           # Genome statistics
+    ├── quality/          # CheckM2/CheckM1 results
+    ├── gunc/            # Contamination assessment
+    ├── rrna/            # Predicted rRNAs
+    ├── trna/            # Predicted tRNAs
+    ├── orfs/            # Predicted genes
+    ├── gtdbtk/          # Taxonomic classification
+    ├── 16S/             # 16S-based taxonomy
+    ├── park/            # Park scores
+    └── mimag/           # Quality classification
+```
+
+## 📝 Notes
+
+- First run creates Conda environments under `.snakemake/conda/`
+
+## 🤝 Contributing
+
+Contributions welcome! Please read our contributing guidelines and submit pull requests.
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

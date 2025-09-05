@@ -39,54 +39,61 @@ if not MAGS:
 def per_mag_outputs(module: str):
     outs = []
     if module == "stats":
-    outs = [RESULTS/"seqkit"/(s+".seqkit.tsv") for s in SAMPLE_LIST]
+        outs = [RESULTS/"seqkit"/(s+".seqkit.tsv") for s in SAMPLE_LIST]
     elif module == "quality":
         suf = ".checkm2.tsv" if USE_CHECKM == "checkm2" else ".checkm1.tsv"
-    outs = [RESULTS/"quality"/(s+suf) for s in SAMPLE_LIST]
+        outs = [RESULTS/"quality"/(s+suf) for s in SAMPLE_LIST]
     elif module == "park":
-    outs = [RESULTS/"park"/(s+".park.tsv") for s in SAMPLE_LIST]
+        outs = [RESULTS/"park"/(s+".park.tsv") for s in SAMPLE_LIST]
     elif module == "gunc":
-    outs = [RESULTS/"gunc"/(s+".gunc.tsv") for s in SAMPLE_LIST]
+        outs = [RESULTS/"gunc"/(s+".gunc.tsv") for s in SAMPLE_LIST]
     elif module == "rrna":
-    outs = [RESULTS/"rrna"/(s+".rrna.tsv") for s in SAMPLE_LIST]
+        outs = [RESULTS/"rrna"/(s+".rrna.tsv") for s in SAMPLE_LIST]
     elif module == "trna":
-    outs = [RESULTS/"trna"/(s+".trna.tsv") for s in SAMPLE_LIST]
+        outs = [RESULTS/"trna"/(s+".trna.tsv") for s in SAMPLE_LIST]
     elif module == "orfs":
-    outs = [RESULTS/"orfs"/(s+".orfs.tsv") for s in SAMPLE_LIST]
+        outs = [RESULTS/"orfs"/(s+".orfs.tsv") for s in SAMPLE_LIST]
     elif module == "gtdb":
-    outs = [RESULTS/"gtdbtk"/(s+".gtdb.tsv") for s in SAMPLE_LIST]
+        outs = [RESULTS/"gtdbtk"/(s+".gtdb.tsv") for s in SAMPLE_LIST]
     elif module == "rrna16S":
-    outs = [RESULTS/"16S"/(s+".16S.tsv") for s in SAMPLE_LIST]
+        outs = [RESULTS/"16S"/(s+".16S.tsv") for s in SAMPLE_LIST]
     elif module == "mimag":
-    outs = [RESULTS/"mimag"/(s+".mimag.tsv") for s in SAMPLE_LIST]
+        outs = [RESULTS/"mimag"/(s+".mimag.tsv") for s in SAMPLE_LIST]
     return outs
 
 SELECTED = [m for m in [
     "stats","quality","park","gunc","rrna","trna","orfs","gtdb","rrna16S","mimag"
 ] if m in MODULES]
 
+# Build target outputs based on selected modules
+def get_all_targets():
+    targets = []
+    for m in SELECTED:
+        targets.extend(str(p) for p in per_mag_outputs(m))
+    targets.extend([str(SUMMARY_TSV), str(REPORT_HTML)])
+    return targets
+
 rule all:
     input:
-        *(o for m in SELECTED for o in per_mag_outputs(m)),
-        SUMMARY_TSV,
-        REPORT_HTML
-
-# Utility: determine domain for barrnap (requires GTDB-Tk output)
+        get_all_targets()# Utility: determine domain for barrnap (requires GTDB-Tk output)
 # This is simplified and handled in the python script.
 
-# Envs
-ENV = {
-    "seqkit": "workflow/envs/seqkit.yaml",
-    "checkm2": "workflow/envs/checkm2.yaml",
-    "checkm1": "workflow/envs/checkm1.yaml",
-    "gunc": "workflow/envs/gunc.yaml",
-    "barrnap": "workflow/envs/barrnap.yaml",
-    "trnascan": "workflow/envs/trnascan.yaml",
-    "prodigal": "workflow/envs/prodigal.yaml",
-    "gtdbtk": "workflow/envs/gtdbtk.yaml",
-    "diamond": "workflow/envs/diamond.yaml",
-    "python": "workflow/envs/python.yaml",
-}
+# Get workflow directory (directory containing the Snakefile)
+workflow.workflow_dir = os.path.dirname(workflow.snakefile)
+
+# Envs (paths relative to workflow directory)
+ENV = {k: os.path.join(workflow.workflow_dir, "envs", f"{k}.yaml") for k in [
+    "seqkit",
+    "checkm2",
+    "checkm1",
+    "gunc",
+    "barrnap",
+    "trnascan",
+    "prodigal",
+    "gtdbtk",
+    "diamond",
+    "python"
+]}
 
 # Include rules
 include: "rules/databases.smk"
