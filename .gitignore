@@ -5,7 +5,6 @@ __pycache__/
 .venv/
 resources/
 results/
-MAGport_report.html
-MAGport_summary.tsv
+magport.egg-info/
 new_prompt.md
-WORKFLOW_NOTES.md
+.dag.svg

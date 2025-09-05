@@ -64,8 +64,11 @@ def main(
     if snake_args:
         cmd += shlex.split(snake_args)
 
-    console.print("[bold]Running Snakemake...[/bold]")
-    console.print(" ".join(shlex.quote(c) for c in cmd))
+    # Don't print extra info if generating DAG
+    if not snake_args or "--dag" not in snake_args:
+        console.print("[bold]Running Snakemake...[/bold]")
+        console.print(" ".join(shlex.quote(c) for c in cmd))
+
     rc = os.spawnvp(os.P_WAIT, cmd[0], cmd)
     raise typer.Exit(code=rc)
 

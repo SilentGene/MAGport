@@ -14,7 +14,6 @@ rule stats_seqkit:
         mkdir -p {STATS_DIR}
         # Use ( ) instead of {{ }} for command grouping
         (
-            echo -e "mag\tfile\tformat\ttype\tnum_seqs\tsum_len\tmin\tavg\tmax\tQ1\tN50\tQ3\tGC\tNpct"
-            seqkit stats -a {input.mag} | sed '1d' | awk -v OFS='\t' -v mag={wildcards.sample} '{{print mag,$0}}'
+            seqkit stats -a {input.mag} -T | awk -v OFS='\t' -v mag={wildcards.sample} 'NR==1 {{print "MAG",$0}}; NR>1 {{print mag,$0}}'
         ) > {output.tsv}
         """

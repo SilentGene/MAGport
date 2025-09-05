@@ -5,8 +5,7 @@ GUNC_DIR = RESULTS / "gunc"
 rule gunc_run:
     conda: ENV["gunc"]
     input:
-        mag=lambda wc: SAMPLES[wc.sample],
-        db=GUNC_DB
+        mag=lambda wc: SAMPLES[wc.sample]
     output:
         tsv=str(GUNC_DIR / "{sample}.gunc.tsv")
     params:

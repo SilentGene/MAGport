@@ -14,18 +14,47 @@ THREADS = int(config.get("threads", 8))
 MODULES = set((config.get("modules", "stats,quality,park,gunc,rrna,trna,orfs,gtdb,rrna16S,mimag").split(',')))
 USE_CHECKM = config.get("use_checkm", "checkm2")
 
+# Database download paths (for magport download command)
+DB_BASE = Path(config.get("db_base", OUTPUT_DIR / "resources"))
+config.setdefault("checkm2_download_path", str(DB_BASE / "checkm2_db"))
+config.setdefault("gunc_download_path", str(DB_BASE / "gunc_db"))
+config.setdefault("gtdb_download_path", str(DB_BASE / "gtdbtk"))
+config.setdefault("ncbi16s_download_path", str(DB_BASE / "ncbi_16s"))
+
 # I/O structure
 RESULTS = OUTPUT_DIR / "results"
 LOGS = OUTPUT_DIR / "results" / "logs"
 SUMMARY_TSV = OUTPUT_DIR / "MAGport_summary.tsv"
 REPORT_HTML = OUTPUT_DIR / "MAGport_report.html"
 
-# Databases
-CHECKM2_DB = Path(config.get("checkm2_db_dir", "resources/checkm2_db"))
-CHECKM1_DB = Path(config.get("checkm1_db_dir", "resources/checkm1_db"))
-GUNC_DB = Path(config.get("gunc_db_dir", "resources/gunc_db"))
-NCBI16S_DIR = Path(config.get("ncbi16s_dir", "resources/ncbi_16s"))
-GTDBTK_DB = Path(config.get("gtdbtk_db_dir", "resources/gtdbtk"))
+# Get database paths from environment variables or config
+def get_db_path(config_key: str, env_var: str, default: str) -> Path:
+    return Path(
+        os.environ.get(env_var) or 
+        config.get(config_key) or 
+        str(OUTPUT_DIR / default)
+    ).resolve()
+
+# Databases with env var fallbacks
+CHECKM2_DB = get_db_path("checkm2_db_dir", "CHECKM2_DB_PATH", "resources/checkm2_db")
+CHECKM1_DB = get_db_path("checkm1_db_dir", "CHECKM1_DB_PATH", "resources/checkm1_db")
+GUNC_DB = get_db_path("gunc_db_dir", "GUNC_DB_PATH", "resources/gunc_db")
+NCBI16S_DIR = get_db_path("ncbi16s_dir", "NCBI16S_DB_PATH", "resources/ncbi_16s")
+GTDBTK_DB = get_db_path("gtdbtk_db_dir", "GTDBTK_DB_PATH", "resources/gtdbtk")
+
+# Verify databases before workflow starts
+# Import database verification function
+verify_all_databases = None
+with open("workflow/rules/databases.smk", 'rt') as f:
+    exec(compile(f.read(), "workflow/rules/databases.smk", 'exec'))
+
+onstart:
+    try:
+        if verify_all_databases:
+            verify_all_databases()
+    except ValueError as e:
+        print(f"[MAGport] Error: {e}")
+        sys.exit(1)
 
 # Discover MAGs
 MAGS = sorted([str(p) for p in INPUT_DIR.glob(f"**/*{EXT}")])

@@ -84,14 +84,100 @@ Select specific modules with `--modules` (comma-separated):
 
 Default: All modules enabled.
 
-## 🗄️ Databases
+## 🗄️ Database Configuration
 
-| Database | Setup | Configuration |
-|----------|-------|---------------|
-| CheckM2  | Auto-download | `config.checkm2_db_dir` |
-| GUNC     | Auto-download | `config.gunc_db_dir` |
-| GTDB-Tk  | Manual setup required | `config.gtdbtk_db_dir` |
-| NCBI 16S | Auto-download & build | `config.ncbi16s_dir` |
+### Default Behavior
+By default, databases are stored in `resources/` under your output directory:
+```
+resources/
+├── checkm2_db/     # CheckM2 database
+├── gunc_db/        # GUNC database
+├── gtdbtk/         # GTDB-Tk reference data
+└── ncbi_16s/       # NCBI 16S BLAST database
+```
+
+### Configuration Methods
+
+1. **Using config.yaml** (recommended):
+   Create `config.yaml` in your working directory:
+   ```yaml
+   # Database paths (absolute paths recommended)
+   checkm2_db_dir: "/path/to/checkm2_db"
+   gunc_db_dir: "/path/to/gunc_db"
+   gtdbtk_db_dir: "/path/to/gtdbtk_db"
+   ncbi16s_dir: "/path/to/ncbi_16s"
+   ```
+
+2. **Using command line**:
+   ```bash
+   magport ... --snake_args "--config checkm2_db_dir=/path/to/checkm2_db"
+   ```
+
+### Database Setup
+
+#### Easy Setup: Using the Download Command
+
+The simplest way to set up databases is using the `magport download` command:
+
+```bash
+# Download all databases to specific locations
+magport download \
+  --gtdb-path /path/to/gtdb/ \
+  --checkm2-db-path /path/to/checkm2db/ \
+  --gunc-path /path/to/gunc/ \
+  --ncbi16s-path /path/to/ncbi16s/
+
+# Or download specific databases
+magport download --gtdb-path /opt/db/gtdb/
+```
+
+#### Manual Database download
+
+```bash
+# CheckM2
+checkm2 database --download --path /path/to/checkm2_db
+
+# GUNC
+gunc download_db -d /path/to/gunc_db
+
+# GTDB
+wget https://data.gtdb.ecogenomic.org/releases/release220/220.0/auxillary_files/gtdbtk_package/full_package/gtdbtk_r220_data.tar.gz
+tar -xzf gtdbtk_r220_data.tar.gz -C /path/to/gtdbtk_db
+
+# NCBI 16S
+wget "https://ftp.ncbi.nlm.nih.gov/blast/db/16S_ribosomal_RNA.tar.gz"
+tar -xzf 16S_ribosomal_RNA.tar.gz -C /path/to/ncbi_16s
+```
+
+> **Note**: For shared computing environments, it's recommended to install databases in a shared location to avoid redundant downloads.
+
+#### Database configuration via Environment Variables
+
+After downloading the databases, you can set database paths using environment variables:
+```bash
+export CHECKM2_DB_PATH="/path/to/checkm2_db"
+export GUNC_DB_PATH="/path/to/gunc_db"
+export GTDBTK_DB_PATH="/path/to/gtdbtk_db"
+export NCBI16S_DB_PATH="/path/to/ncbi_16s"
+```
+
+### Database Verification
+
+The pipeline automatically verifies database integrity before running:
+
+- Checks for required database files and directories
+- Verifies database structure and completeness
+- Provides clear error messages if databases are missing or incomplete
+
+If a database is missing or invalid, you'll receive specific instructions on how to:
+1. Set up the database manually, or
+2. Use `magport download` to obtain the database
+
+To verify your database configuration without running the pipeline:
+```bash
+# Do a dry run with verbose output
+magport -i test/mags -o test/output --snake_args "-n -p"
+```
 
 ## 📊 Outputs
 

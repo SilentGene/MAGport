@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 import csv
 import re
+import sys
+from pathlib import Path
+from typing import Dict, List
+
 import pandas as pd
 
 # Collect per-sample TSVs into a consolidated table
@@ -129,12 +131,6 @@ if __name__ == '__main__':
     mags = sys.argv[3:]
     out.parent.mkdir(parents=True, exist_ok=True)
     main(out, results_dir, mags)
-from __future__ import annotations
-
-import csv
-import sys
-from pathlib import Path
-from typing import Dict, List
 
 FIELDS = [
     "MAG_ID",

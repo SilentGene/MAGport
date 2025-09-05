@@ -5,8 +5,7 @@ QUALITY_DIR = RESULTS / "quality"
 rule quality_checkm2:
     conda: ENV["checkm2"]
     input:
-        mag=lambda wc: SAMPLES[wc.sample],
-        db=CHECKM2_DB
+        mag=lambda wc: SAMPLES[wc.sample]
     output:
         tsv=str(QUALITY_DIR / "{sample}.checkm2.tsv")
     params:

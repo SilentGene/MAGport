@@ -1,61 +1,53 @@
-# Database setup rules (auto-download where feasible)
+# Database verification
+def check_db_path(db_path, db_name):
+    """Check if database path is configured and exists"""
+    db_path = Path(db_path)
+    env_var = f"{db_name.upper()}_DB_PATH"
+    
+    if not db_path or str(db_path) == "":
+        raise ValueError(
+            f"{db_name} database path is not configured. "
+            f"Please either:\n"
+            f"1. Set {env_var} environment variable, or\n"
+            f"2. Configure {db_name.lower()}_db_dir in config.yaml, or\n"
+            f"3. Run 'magport download --{db_name.lower()}-path /path/to/download/location' to download it"
+        )
+    
+    if not db_path.exists():
+        raise ValueError(
+            f"{db_name} database not found at {db_path}. "
+            f"Please either:\n"
+            f"1. Create the directory and provide the database, or\n"
+            f"2. Run 'magport download --{db_name.lower()}-path /path/to/download/location' to download it"
+        )
 
-rule db_checkm2_download:
-    conda: ENV["checkm2"]
-    output:
-        directory(CHECKM2_DB)
-    shell:
-        r"""
-        mkdir -p {output}
-        # Placeholder: checkm2 database setup (requires internet). Users may pre-populate.
-        # checkm2 database --download --path {output}
-        """
+def verify_all_databases():
+    """Verify all required databases before workflow starts"""
+    # 获取全局变量
+    global MODULES, USE_CHECKM
+    global GTDBTK_DB, CHECKM2_DB, CHECKM1_DB, GUNC_DB, NCBI16S_DIR
+    
+    try:
+        # 检查哪些模块被启用
+        enabled_modules = set(MODULES)
+        
+        # 根据启用的模块验证相应的数据库
+        if "gtdb" in enabled_modules:
+            check_db_path(GTDBTK_DB, "GTDBTK")
+        
+        if "quality" in enabled_modules:
+            if USE_CHECKM == "checkm2":
+                check_db_path(CHECKM2_DB, "CHECKM2")
+            else:
+                check_db_path(CHECKM1_DB, "CHECKM1")
+        
+        if "gunc" in enabled_modules:
+            check_db_path(GUNC_DB, "GUNC")
+        
+        if "rrna16S" in enabled_modules:
+            check_db_path(NCBI16S_DIR, "NCBI16S")
+    except NameError as e:
+        print(f"[MAGport] Warning: Could not verify databases - {e}")
+        print("[MAGport] This is normal if you're just viewing the DAG or doing a dry run.")
 
-rule db_gunc_download:
-    conda: ENV["gunc"]
-    output:
-        directory(GUNC_DB)
-    shell:
-        r"""
-        mkdir -p {output}
-        # Placeholder: gunc database download (e.g., gunc download-db)
-        """
 
-rule db_gtdbtk_note:
-    message:
-        "GTDB-Tk DB must be provided by the user. Set gtdbtk_db_dir in config.yaml to a valid GTDB-Tk release."
-    output:
-        touch(GTDBTK_DB / "REQUIRES_USER_DB")
-    shell:
-        r"""
-        mkdir -p {GTDBTK_DB}
-        touch {output}
-        """
-
-rule db_ncbi_16s_download:
-    conda: ENV["diamond"]
-    output:
-        NCBI16S_DIR / "16S_ribosomal_RNA.dmnd"
-    params:
-        tar = NCBI16S_DIR / "16S_ribosomal_RNA.tar.gz",
-        fasta = NCBI16S_DIR / "16S_rRNA.fasta"
-    shell:
-        r"""
-        set -euo pipefail
-        mkdir -p {NCBI16S_DIR}
-        if [ ! -s {params.tar} ]; then
-            curl -L https://ftp.ncbi.nlm.nih.gov/blast/db/16S_ribosomal_RNA.tar.gz -o {params.tar}
-        fi
-        # Extract and convert BLAST db to FASTA (requires blastdbcmd); fallback note if missing
-        if command -v blastdbcmd >/dev/null 2>&1; then
-            tar -xzf {params.tar} -C {NCBI16S_DIR}
-            # There may be multiple volumes; build a .pin file list
-            DBROOT=$(ls {NCBI16S_DIR}/16S_ribosomal_RNA.*.tar.gz 2>/dev/null | head -n1 || true)
-            # Fallback to base name
-            blastdbcmd -db {NCBI16S_DIR}/16S_ribosomal_RNA -entry all -out {params.fasta} || true
-        else
-            echo "blastdbcmd not found; attempting direct tar to FASTA is not supported. Please install BLAST+ for a complete 16S FASTA." >&2
-            touch {params.fasta}
-        fi
-        diamond makedb --in {params.fasta} -d {output}
-        """

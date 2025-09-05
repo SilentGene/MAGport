@@ -5,8 +5,7 @@ GTDB_DIR = RESULTS / "gtdbtk"
 rule gtdbtk_classify:
     conda: ENV["gtdbtk"]
     input:
-        mag=lambda wc: SAMPLES[wc.sample],
-        db_marker="resources/gtdbtk/REQUIRES_USER_DB"
+        mag=lambda wc: SAMPLES[wc.sample]
     output:
         tsv=str(GTDB_DIR / "{sample}.gtdb.tsv")
     params:
