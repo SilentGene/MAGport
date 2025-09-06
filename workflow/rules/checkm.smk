@@ -10,12 +10,14 @@ rule run_checkm2:
         orfs=expand(str(ORF_DIR / "{sample}.faa"), sample=SAMPLE_LIST)
     output:
         summary=QUALITY_DIR / "checkm2_summary.tsv"
+    benchmark:
+        str(BENCHMARKS / "run_checkm2.benchmark.txt")
     params:
         indir=ORF_DIR,
         db=str(CHECKM2_DB / "uniref100.KO.1.dmnd"),
     log:
         str(LOGS / "checkm2.log")
-    threads: THREADS
+    threads: min(8, THREADS)
     shell:
         r"""
         mkdir -p {QUALITY_DIR}
@@ -32,7 +34,9 @@ rule run_checkm1:
     input:
         orfs=expand(str(ORF_DIR / "{sample}.faa"), sample=SAMPLE_LIST)
     output:
-        summary=QUALITY_DIR / "checkm1_summary.tsv",
+        summary=QUALITY_DIR / "checkm1_summary.tsv"
+    benchmark:
+        str(BENCHMARKS / "run_checkm1.benchmark.txt")
     params:
         indir=ORF_DIR,
         db=CHECKM1_DB

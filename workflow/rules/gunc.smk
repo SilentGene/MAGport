@@ -8,27 +8,27 @@ rule gunc_run_all:
     input:
         orfs=expand(str(ORF_DIR / "{sample}.faa"), sample=SAMPLE_LIST)
     output:
-        summary=GUNC_DIR / "GUNC_summary.tsv",
-        diamond=GUNC_DIR / "diamond_output"
+        summary=GUNC_DIR / "GUNC_summary.tsv"
+    benchmark:
+        str(BENCHMARKS / "gunc.benchmark.txt")
     params:
         indir=ORF_DIR,
         db=str(GUNC_DB / "gunc_db_gtdb95.dmnd")
     log:
         str(LOGS / "gunc.log")
-    threads: THREADS
+    threads: min(8, THREADS)
     shell:
         r"""
         mkdir -p {GUNC_DIR}
-        (gunc run --gene_calls \
+        gunc run --gene_calls \
             --input_dir {params.indir} \
             --file_suffix .faa \
             --db_file {params.db} \
             --threads {threads} \
-            --out_dir {GUNC_DIR}) &> {log}
-
+            --out_dir {GUNC_DIR} &> {log}
+        echo "GUNC analysis completed. Renaming output file..."
         # rename GUNC result
         mv {GUNC_DIR}/GUNC.gtdb_95.maxCSS_level.tsv {output.summary}
-        mv {GUNC_DIR}/diamond_output {output.diamond}
         """
 
 # No aggregate rule; top-level handles targets

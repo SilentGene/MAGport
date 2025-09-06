@@ -6,6 +6,8 @@ rule report_html:
         SUMMARY_TSV
     output:
         REPORT_HTML
+    benchmark:
+        str(BENCHMARKS / "report_html.benchmark.txt")
     params:
         title=config.get("report_title", "MAGport Report"),
         input_dir=str(INPUT_DIR)

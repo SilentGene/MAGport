@@ -8,7 +8,7 @@ rule mimag_classify:
         checkm2=get_dir("checkm", "03_quality/checkm") / "checkm2_summary.tsv" if USE_CHECKM == "checkm2" else [],
         checkm1=get_dir("checkm", "03_quality/checkm") / "checkm1_summary.tsv" if USE_CHECKM == "checkm1" else [],
         trna=lambda wc: get_dir("trna", "02_genes/trna") / (wc.sample + ".tRNA.tsv"),
-        rrna=lambda wc: get_dir("rrna", "02_genes/rrna") / (wc.sample + ".rRNA.tsv"),
+        rrna=lambda wc: get_dir("rrna", "02_genes/rrna") / (wc.sample + ".rRNA.tsv")
     output:
         tsv=str(MIMAG_DIR / "{sample}.MIMAG_level.tsv")
     params:

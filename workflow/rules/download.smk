@@ -9,6 +9,8 @@ NCBI16S_URL = "https://ftp.ncbi.nlm.nih.gov/blast/db/16S_ribosomal_RNA.tar.gz"
 rule download_checkm2_db:
     output:
         directory(config.get("checkm2_download_path"))
+    benchmark:
+        str(BENCHMARKS / "download_checkm2_db.benchmark.txt")
     conda:
         ENV["checkm2"]
     message:
@@ -23,6 +25,8 @@ rule download_checkm2_db:
 rule download_gunc_db:
     output:
         directory(config.get("gunc_download_path"))
+    benchmark:
+        str(BENCHMARKS / "download_gunc_db.benchmark.txt")
     conda:
         ENV["gunc"]
     message:
@@ -37,6 +41,8 @@ rule download_gunc_db:
 rule download_gtdbtk_db:
     output:
         directory(config.get("gtdb_download_path"))
+    benchmark:
+        str(BENCHMARKS / "download_gtdbtk_db.benchmark.txt")
     conda:
         ENV["gtdbtk"]  # For wget/curl and other tools
     message:
@@ -59,6 +65,8 @@ rule download_ncbi16s_db:
         ENV["blast"]
     message:
         "Downloading NCBI 16S BLAST database..."
+    benchmark:
+        str(BENCHMARKS / "download_ncbi16s_db.benchmark.txt")
     shell:
         """
         set -euo pipefail

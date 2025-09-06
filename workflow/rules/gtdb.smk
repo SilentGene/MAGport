@@ -10,16 +10,16 @@ rule run_gtdbtk:
         orfs=expand(str(ORF_DIR / "{sample}.faa"), sample=SAMPLE_LIST),
         genes=expand(str(ORF_DIR / "{sample}.fna"), sample=SAMPLE_LIST)
     output:
-        bac_summary=directory(GTDB_DIR / "bac120_summary"),
-        ar_summary=directory(GTDB_DIR / "ar53_summary"),
         summary=GTDB_DIR / "gtdb.merged_summary.tsv"
+    benchmark:
+        str(BENCHMARKS / "gtdbtk.benchmark.txt")
     params:
         indir=ORF_DIR,
         pplacer=lambda w: min(THREADS, 3),
-        db=GTDB_DIR
+        db=GTDBTK_DB
     log:
         str(LOGS / "gtdbtk.log")
-    threads: THREADS
+    threads: min(8, THREADS)
     shell:
         r"""
         mkdir -p {GTDB_DIR}
@@ -29,19 +29,20 @@ rule run_gtdbtk:
         # Run GTDB-Tk classify_wf on all genomes
         (gtdbtk classify_wf \
             --genome_dir {params.indir} \
-            --genes \
+            --genes --skip_ani_screen \
             --out_dir {GTDB_DIR} \
             --cpus {threads} \
             --pplacer_cpus {params.pplacer} \
             -x .faa) &> {log}
 
         # if both summary files exist, merge them
+        echo "Merging GTDB-Tk summary files..."
         if [ -s {GTDB_DIR}/gtdbtk.ar53.summary.tsv ] && [ -s {GTDB_DIR}/gtdbtk.bac120.summary.tsv ]; then
             awk 'FNR==1 && NR>1 {{next}} NF>0' {GTDB_DIR}/gtdbtk.ar53.summary.tsv {GTDB_DIR}/gtdbtk.bac120.summary.tsv > {output.summary}
         elif [ -s {GTDB_DIR}/gtdbtk.ar53.summary.tsv ]; then
-            cp {GTDB_DIR}/gtdbtk.ar53.summary.tsv {output.summary}
+            mv {GTDB_DIR}/gtdbtk.ar53.summary.tsv {output.summary}
         elif [ -s {GTDB_DIR}/gtdbtk.bac120.summary.tsv ]; then
-            cp {GTDB_DIR}/gtdbtk.bac120.summary.tsv {output.summary}
+            mv {GTDB_DIR}/gtdbtk.bac120.summary.tsv {output.summary}
         else
             touch {output.summary}
         fi

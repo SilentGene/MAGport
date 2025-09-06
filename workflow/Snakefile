@@ -44,6 +44,7 @@ MIMAG_DIR = get_dir("mimag", "03_quality/mimag")
 GTDB_DIR = get_dir("gtdbtk", "04_taxonomy/gtdbtk")
 R16_DIR = get_dir("r16s", "04_taxonomy/16S")
 LOGS = get_dir("logs", "logs")
+BENCHMARKS = get_dir("benchmarks", "benchmarks")
 
 # output files
 SUMMARY_TSV = OUTPUT_DIR / config.get("output_files", {}).get("summary", "MAGport_summary.tsv")

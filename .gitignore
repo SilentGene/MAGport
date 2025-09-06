@@ -8,3 +8,5 @@ results/
 magport.egg-info/
 new_prompt.md
 dag.svg
+test/
+magport.sh

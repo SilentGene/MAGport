@@ -19,6 +19,7 @@ rule rrna_barrnap:
         mkdir -p {RRNA_DIR}
         # Determine kingdom from GTDB lineage (default to bacteria if not found)
         domain=$(awk -v mag="{wildcards.sample}" 'BEGIN{{FS="\t"}} $1==mag {{print $2}}' {input.gtdb})
+        echo "Domain for {wildcards.sample}: $domain"
         # Run barrnap for rRNA prediction
         if echo "$domain" | grep -qi "Archaea"; then
             barrnap --quiet --threads {threads} --kingdom arc --outseq {output.rna_fasta} {input.mag} > {output.gff} 2> {log}
@@ -40,29 +41,26 @@ rule rrna_barrnap:
 rule extract_longest_16s:
     conda: ENV["seqkit"]
     input:
-        gff=RRNA_DIR / "{sample}.rRNA.gff",
         rna_fasta=RRNA_DIR / "{sample}.rRNA.fna"
     output:
         fasta=RRNA_DIR / "{sample}.16S.fasta"
     shell:
         r"""
-        # Check for 16S annotations
-        if grep -q "16S" {input.gff}; then
-            # Extract all 16S sequences and sort by length
-            grep "16S" {input.gff} | \
-            awk -F'\t' '{{print $1, $4, $5}}' | \
-            while read contig start end; do
-                len=$((end - start + 1))
-                echo "$contig:$start-$end $len"
-            done | \
-            sort -k2,2nr | \
-            head -n1 | \
-            cut -d' ' -f1 | \
-            xargs -I{{}} seqkit faidx {input.rna_fasta} "{{}}" > {output.fasta}
-        else
-            # if no 16S found, create an empty fasta file
-            touch {output.fasta}
-        fi
+        awk '/^>16S_rRNA/ {{
+            header=$0
+            getline seq
+            if(length(seq) > maxlen) {{
+                maxlen=length(seq)
+                maxh=header
+                maxs=seq
+            }}
+        }}
+        END {{
+            if(maxlen > 0) {{
+                print maxh
+                print maxs
+            }}
+        }}' {input.rna_fasta} > {output.fasta}
         """
 
 

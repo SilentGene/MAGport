@@ -4,7 +4,7 @@
 # Database paths
 checkm2_db_dir: "/mnt/hpccs01/work/microbiome/db/CheckM2_database/"
 checkm1_db_dir: ""
-gunc_db_dir: "/mnt/hpccs01/work/microbiome/db/gunc/1.0.1/"
+gunc_db_dir: "/mnt/hpccs01/work/microbiome/users/heyu/db/gunc_db/"
 ncbi16s_dir: "/mnt/hpccs01/work/microbiome/users/heyu/db/ncbi_16S/"
 gtdbtk_db_dir: "/work/microbiome/db/gtdb/gtdb_release226/auxillary_files/gtdbtk_package/full_package/release226"
 
@@ -30,6 +30,9 @@ directories:
   
   # Logs
   logs: "logs"
+
+  # Benchmarks
+  benchmarks: "benchmarks"
 
 
 # Output files (relative to output_dir)
