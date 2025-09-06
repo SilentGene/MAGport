@@ -54,36 +54,24 @@ rule download_gtdbtk_db:
 
 rule download_ncbi16s_db:
     output:
-        directory(config.get("ncbi16s_download_path")),
-        db=config.get("ncbi16s_download_path") + "/16S_ribosomal_RNA.dmnd",
-        fasta=config.get("ncbi16s_download_path") + "/16S_rRNA.fasta"
+        directory(config.get("ncbi16s_download_path"))
     conda:
-        ENV["diamond"]
+        ENV["blast"]
     message:
-        "Downloading and preparing NCBI 16S database..."
-    params:
-        tar=lambda wildcards, output: str(Path(output[0]) / "16S_ribosomal_RNA.tar.gz")
+        "Downloading NCBI 16S BLAST database..."
     shell:
         """
         set -euo pipefail
-        mkdir -p {output[0]}
+        mkdir -p {output}
+        cd {output}
         
         # Download BLAST DB
-        if [ ! -s {params.tar} ]; then
-            echo "Downloading NCBI 16S rRNA database..."
-            wget -c {NCBI16S_URL} -O {params.tar}
-        fi
-        
-        # Extract and convert to FASTA
-        if command -v blastdbcmd >/dev/null 2>&1; then
-            echo "Converting BLAST DB to FASTA..."
-            cd {output[0]}
-            tar -xzf {params.tar}
-            blastdbcmd -db 16S_ribosomal_RNA -entry all -out {output.fasta}
-        else
-            echo "WARNING: blastdbcmd not found. Creating empty FASTA. Install BLAST+ for complete 16S database." >&2
-            touch {output.fasta}
-        fi
+        echo "Downloading NCBI 16S rRNA BLAST database..."
+        wget -c {NCBI16S_URL} -O 16S_ribosomal_RNA.tar.gz
+        tar -xzf 16S_ribosomal_RNA.tar.gz
+        rm 16S_ribosomal_RNA.tar.gz
+        touch .downloaded
+        """
         
         # Build DIAMOND database
         echo "Building DIAMOND database..."

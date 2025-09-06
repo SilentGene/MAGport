@@ -1,5 +1,0 @@
-name: magport-diamond
-dependencies:
-  - conda-forge::python=3.10
-  - bioconda::diamond
-  - bioconda::blast

@@ -15,17 +15,39 @@ MODULES = set((config.get("modules", "stats,quality,park,gunc,rrna,trna,orfs,gtd
 USE_CHECKM = config.get("use_checkm", "checkm2")
 
 # Database download paths (for magport download command)
-DB_BASE = Path(config.get("db_base", OUTPUT_DIR / "resources"))
+DB_BASE = Path(config.get("db_base", OUTPUT_DIR / "databases"))
 config.setdefault("checkm2_download_path", str(DB_BASE / "checkm2_db"))
 config.setdefault("gunc_download_path", str(DB_BASE / "gunc_db"))
 config.setdefault("gtdb_download_path", str(DB_BASE / "gtdbtk"))
 config.setdefault("ncbi16s_download_path", str(DB_BASE / "ncbi_16s"))
 
-# I/O structure
-RESULTS = OUTPUT_DIR / "results"
-LOGS = OUTPUT_DIR / "results" / "logs"
-SUMMARY_TSV = OUTPUT_DIR / "MAGport_summary.tsv"
-REPORT_HTML = OUTPUT_DIR / "MAGport_report.html"
+# Get directory paths from config
+def get_dir(key: str, default: str) -> Path:
+    """Get directory path from config, with default fallback
+    Args:
+        key: The key in config.directories
+        default: Default path relative to output_dir if not configured
+    Example:
+        get_dir("seqkit", "01_stats/seqkit") might return Path("/path/to/output/01_stats/seqkit")
+    """
+    return OUTPUT_DIR / config.get("directories", {}).get(key, default)
+
+# Module output directories
+SEQKIT_DIR = get_dir("seqkit", "01_stats/seqkit")
+ORF_DIR = get_dir("orfs", "02_genes/orfs")
+RRNA_DIR = get_dir("rrna", "02_genes/rrna")
+TRNA_DIR = get_dir("trna", "02_genes/trna")
+QUALITY_DIR = get_dir("checkm", "03_quality/checkm")
+GUNC_DIR = get_dir("gunc", "03_quality/gunc")
+PARK_DIR = get_dir("park", "03_quality/park")
+MIMAG_DIR = get_dir("mimag", "03_quality/mimag")
+GTDB_DIR = get_dir("gtdbtk", "04_taxonomy/gtdbtk")
+R16_DIR = get_dir("r16s", "04_taxonomy/16S")
+LOGS = get_dir("logs", "logs")
+
+# output files
+SUMMARY_TSV = OUTPUT_DIR / config.get("output_files", {}).get("summary", "MAGport_summary.tsv")
+REPORT_HTML = OUTPUT_DIR / config.get("output_files", {}).get("report", "MAGport_report.html")
 
 # Get database paths from environment variables or config
 def get_db_path(config_key: str, env_var: str, default: str) -> Path:
@@ -57,37 +79,42 @@ onstart:
         sys.exit(1)
 
 # Discover MAGs
-MAGS = sorted([str(p) for p in INPUT_DIR.glob(f"**/*{EXT}")])
-SAMPLES = {Path(p).stem: str(Path(p).resolve()) for p in MAGS}
-SAMPLE_LIST = sorted(SAMPLES.keys())
+MAGS = sorted([str(p) for p in INPUT_DIR.glob(f"**/*{EXT}")])  # e.g. ['/path/to/MAG1.fasta', '/path/to/MAG2.fasta', ...]
+SAMPLES = {Path(p).stem: str(Path(p).resolve()) for p in MAGS}  # e.g. {'MAG1': '/path/to/MAG1.fasta', ...}
+SAMPLE_LIST = sorted(SAMPLES.keys())  # e.g. ['MAG1', 'MAG2', ...]
 
 if not MAGS:
-    print(f"[MAGport] No MAGs found in {INPUT_DIR} with extension {EXT}. The workflow may do nothing.")
+    print(f"[MAGport] No MAGs found in {INPUT_DIR} with extension {EXT}. The workflow will not proceed.")
+    sys.exit(1)
+
 
 # Targets
 def per_mag_outputs(module: str):
     outs = []
     if module == "stats":
-        outs = [RESULTS/"seqkit"/(s+".seqkit.tsv") for s in SAMPLE_LIST]
+        outs = [get_dir("seqkit", "01_stats/seqkit")/(s+".seqkit.tsv") for s in SAMPLE_LIST]
     elif module == "quality":
-        suf = ".checkm2.tsv" if USE_CHECKM == "checkm2" else ".checkm1.tsv"
-        outs = [RESULTS/"quality"/(s+suf) for s in SAMPLE_LIST]
+        if USE_CHECKM == "checkm2":
+            outs = [get_dir("checkm", "03_quality/checkm")/"checkm2_summary.tsv"]
+        else:
+            outs = [get_dir("checkm", "03_quality/checkm")/"checkm1_summary.tsv"]
     elif module == "park":
-        outs = [RESULTS/"park"/(s+".park.tsv") for s in SAMPLE_LIST]
+        outs = [get_dir("park", "03_quality/park")/(s+".park.tsv") for s in SAMPLE_LIST]
     elif module == "gunc":
-        outs = [RESULTS/"gunc"/(s+".gunc.tsv") for s in SAMPLE_LIST]
+        outs = [get_dir("gunc", "03_quality/gunc")/"GUNC_summary.tsv"]
     elif module == "rrna":
-        outs = [RESULTS/"rrna"/(s+".rrna.tsv") for s in SAMPLE_LIST]
+        outs = ([get_dir("rrna", "02_genes/rrna")/(s+".rRNA.tsv") for s in SAMPLE_LIST] +
+                [get_dir("rrna", "02_genes/rrna")/(s+".16S.fasta") for s in SAMPLE_LIST])
     elif module == "trna":
-        outs = [RESULTS/"trna"/(s+".trna.tsv") for s in SAMPLE_LIST]
+        outs = [get_dir("trna", "02_genes/trna")/(s+".tRNA.tsv") for s in SAMPLE_LIST]
     elif module == "orfs":
-        outs = [RESULTS/"orfs"/(s+".orfs.tsv") for s in SAMPLE_LIST]
+        outs = [get_dir("orfs", "02_genes/orfs")/(s+".orfs.tsv") for s in SAMPLE_LIST]
     elif module == "gtdb":
-        outs = [RESULTS/"gtdbtk"/(s+".gtdb.tsv") for s in SAMPLE_LIST]
+        outs = [get_dir("gtdbtk", "04_taxonomy/gtdbtk")/"gtdb.merged_summary.tsv"]
     elif module == "rrna16S":
-        outs = [RESULTS/"16S"/(s+".16S.tsv") for s in SAMPLE_LIST]
+        outs = [get_dir("r16s", "04_taxonomy/16S")/(s+".16S.tsv") for s in SAMPLE_LIST]
     elif module == "mimag":
-        outs = [RESULTS/"mimag"/(s+".mimag.tsv") for s in SAMPLE_LIST]
+        outs = [get_dir("mimag", "03_quality/mimag")/(s+".MIMAG_level.tsv") for s in SAMPLE_LIST]
     return outs
 
 SELECTED = [m for m in [
@@ -96,6 +123,19 @@ SELECTED = [m for m in [
 
 # Build target outputs based on selected modules
 def get_all_targets():
+    """
+    Get all target file paths for the workflow.
+    Example:
+        If MODULES includes "stats" and "gtdb", this might return:
+        [
+            "/path/to/output/01_stats/seqkit/MAG1.seqkit.tsv",
+            "/path/to/output/01_stats/seqkit/MAG2.seqkit.tsv",
+            "/path/to/output/04_taxonomy/gtdbtk/gtdb.merged_summary.tsv",
+            "/path/to/output/MAGport_summary.tsv",
+            "/path/to/output/MAGport_report.html"
+        ]
+
+    """
     targets = []
     for m in SELECTED:
         targets.extend(str(p) for p in per_mag_outputs(m))
@@ -104,8 +144,8 @@ def get_all_targets():
 
 rule all:
     input:
-        get_all_targets()# Utility: determine domain for barrnap (requires GTDB-Tk output)
-# This is simplified and handled in the python script.
+        get_all_targets()
+
 
 # Get workflow directory (directory containing the Snakefile)
 workflow.workflow_dir = os.path.dirname(workflow.snakefile)
@@ -115,6 +155,7 @@ ENV = {k: os.path.join(workflow.workflow_dir, "envs", f"{k}.yaml") for k in [
     "seqkit",
     "checkm2",
     "checkm1",
+    "blast",
     "gunc",
     "barrnap",
     "trnascan",
@@ -127,7 +168,7 @@ ENV = {k: os.path.join(workflow.workflow_dir, "envs", f"{k}.yaml") for k in [
 # Include rules
 include: "rules/databases.smk"
 include: "rules/stats.smk"
-include: "rules/quality.smk"
+include: "rules/checkm.smk"
 include: "rules/park.smk"
 include: "rules/gunc.smk"
 include: "rules/rrna.smk"
@@ -136,5 +177,5 @@ include: "rules/orfs.smk"
 include: "rules/gtdb.smk"
 include: "rules/rrna16s.smk"
 include: "rules/mimag.smk"
-include: "rules/collect.smk"
+include: "rules/summary.smk"
 include: "rules/report.smk"

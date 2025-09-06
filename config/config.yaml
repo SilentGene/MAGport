@@ -1,15 +1,44 @@
 # Global MAGport configuration (can be overridden via CLI --config key=val)
-# Paths will be created if missing.
+# All paths will be created if missing.
 
+# Database paths
 checkm2_db_dir: "/mnt/hpccs01/work/microbiome/db/CheckM2_database/"
 checkm1_db_dir: ""
 gunc_db_dir: "/mnt/hpccs01/work/microbiome/db/gunc/1.0.1/"
 ncbi16s_dir: "/mnt/hpccs01/work/microbiome/users/heyu/db/ncbi_16S/"
 gtdbtk_db_dir: "/work/microbiome/db/gtdb/gtdb_release226/auxillary_files/gtdbtk_package/full_package/release226"
 
+# Output directory structure (all paths are relative to output_dir)
+directories:
+  # 01: Basic statistics
+  seqkit: "01_stats/seqkit"
+  
+  # 02: Gene predictions
+  orfs: "02_genes/orfs"
+  rrna: "02_genes/rrna"
+  trna: "02_genes/trna"
+  
+  # 03: Quality assessment
+  checkm: "03_quality/checkm"
+  gunc: "03_quality/gunc"
+  park: "03_quality/park"
+  mimag: "03_quality/mimag"
+  
+  # 04: Taxonomy
+  gtdbtk: "04_taxonomy/gtdbtk"
+  r16s: "04_taxonomy/16S"
+  
+  # Logs
+  logs: "logs"
+
+
+# Output files (relative to output_dir)
+output_files:
+  summary: "MAGport_summary.tsv"
+  report: "MAGport_report.html"
 
 # Tool switches
 use_checkm: checkm2  # options: checkm2, checkm1
 
-# Reporting
+# HTML Reporting
 report_title: MAGport Report

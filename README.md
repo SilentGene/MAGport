@@ -21,7 +21,7 @@ MAGport is a modular workflow that provides:
 - tRNA scanning (tRNAscan-SE)
 - Gene prediction (Prodigal)
 - Taxonomic classification (GTDB-Tk)
-- 16S-based taxonomy (DIAMOND)
+- 16S-based taxonomy (BLAST)
 - Park score calculation
 - MIMAG quality classification
 
@@ -185,14 +185,21 @@ magport -i test/mags -o test/output --snake_args "-n -p"
 results/
 ├── MAGport_report.html    # Interactive visualization
 ├── MAGport_summary.tsv    # Consolidated results
-└── results/              
-    ├── seqkit/           # Genome statistics
-    ├── quality/          # CheckM2/CheckM1 results
-    ├── gunc/            # Contamination assessment
-    ├── rrna/            # Predicted rRNAs
-    ├── trna/            # Predicted tRNAs
-    ├── orfs/            # Predicted genes
-    ├── gtdbtk/          # Taxonomic classification
+├── 01_stats/             # Basic statistics
+│   └── seqkit/           # Genome statistics (length, GC%, etc.)
+├── 02_genes/             # Gene predictions
+│   ├── orfs/            # Predicted protein-coding genes
+│   ├── rrna/            # Predicted rRNAs
+│   └── trna/            # Predicted tRNAs
+├── 03_quality/           # Quality assessment
+│   ├── checkm/          # CheckM2/CheckM1 results
+│   ├── gunc/            # Contamination assessment
+│   ├── park/            # MIMAG quality score
+│   └── mimag/           # MIMAG compliance report
+├── 04_taxonomy/          # Taxonomic classification
+│   ├── gtdbtk/          # GTDB-Tk results
+│   └── 16S/             # 16S rRNA-based taxonomy
+└── logs/                # Runtime logs
     ├── 16S/             # 16S-based taxonomy
     ├── park/            # Park scores
     └── mimag/           # Quality classification

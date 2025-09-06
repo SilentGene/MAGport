@@ -1,23 +1,30 @@
-# Module 9: 16S-based taxonomy with DIAMOND blastn
+# Module 9: 16S-based taxonomy with NCBI BLAST
 
-R16_DIR = RESULTS / "16S"
+R16_DIR = get_dir("r16s", "04_taxonomy/16S")
 
-rule rrna16s_diamond:
-    conda: ENV["diamond"]
+rule rrna16s_blast:
+    conda: ENV["blast"]
     input:
-        fasta=lambda wc: RESULTS / "rrna" / (wc.sample + ".16S.fasta")
+        fasta=lambda wc: get_dir("rrna", "02_genes/rrna") / (wc.sample + ".16S.fasta")
     output:
         tsv=str(R16_DIR / "{sample}.16S.tsv")
     params:
-        db=NCBI16S_DIR / "16S_ribosomal_RNA.dmnd"  # Moved to params
+        db=NCBI16S_DIR / "16S_ribosomal_RNA"  # Path to BLAST database without extension
     threads: THREADS
     run:
         shell(r"""
         mkdir -p {R16_DIR}
         if [ -s {input.fasta} ]; then
-            diamond blastn -q {input.fasta} -d {params.db} -o {output.tsv} -f 6 qseqid sseqid pident length evalue bitscore stitle -k 1 --threads {threads}
+            blastn -task megablast \
+                -query {input.fasta} \
+                -db {params.db} \
+                -out {output.tsv} \
+                -evalue 1e-5 \
+                -outfmt '6 std qlen slen qcovs staxids stitle' \
+                -max_target_seqs 1 \
+                -num_threads {threads}
         else
-            echo -e "qseqid\tsseqid\tpident\tlength\tevalue\tbitscore\tstitle" > {output.tsv}
+            touch {output.tsv}
         fi
         """)
 

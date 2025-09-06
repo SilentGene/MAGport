@@ -1,6 +1,6 @@
 # Module 1: Basic statistics via SeqKit
 
-STATS_DIR = RESULTS / "seqkit"
+STATS_DIR = get_dir("seqkit", "01_stats/seqkit")
 
 rule stats_seqkit:
     conda: ENV["seqkit"]
@@ -12,7 +12,6 @@ rule stats_seqkit:
     shell:
         r"""
         mkdir -p {STATS_DIR}
-        # Use ( ) instead of {{ }} for command grouping
         (
             seqkit stats -a {input.mag} -T | awk -v OFS='\t' -v mag={wildcards.sample} 'NR==1 {{print "MAG",$0}}; NR>1 {{print mag,$0}}'
         ) > {output.tsv}

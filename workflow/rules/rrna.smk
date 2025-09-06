@@ -1,33 +1,31 @@
 # Module 5: rRNA via barrnap
 
-RRNA_DIR = RESULTS / "rrna"
+RRNA_DIR = get_dir("rrna", "02_genes/rrna")
 
 rule rrna_barrnap:
     conda: ENV["barrnap"]
     input:
         mag=lambda wc: SAMPLES[wc.sample],
-        lineage=lambda wc: RESULTS / "gtdbtk" / f"{wc.sample}.gtdb.tsv"
+        gtdb=GTDB_DIR / "gtdb.merged_summary.tsv"
     output:
-        gff=str(RRNA_DIR / "{sample}.barrnap.gff"),
-        fasta=str(RRNA_DIR / "{sample}.16S.fasta"),
-        tsv=str(RRNA_DIR / "{sample}.rrna.tsv")
+        gff=str(RRNA_DIR / "{sample}.rRNA.gff"),
+        rna_fasta=str(RRNA_DIR / "{sample}.rRNA.fna"),
+        tsv=str(RRNA_DIR / "{sample}.rRNA.tsv")
+    log:
+        str(LOGS / "{sample}.barrnap.log")
     threads: 1
     shell:
         r"""
         mkdir -p {RRNA_DIR}
-        mkdir -p {LOGS}
         # Determine kingdom from GTDB lineage (default to bacteria if not found)
-        kingdom=$(awk 'NR==2{{print $1}}' {input.lineage} 2>/dev/null | grep -qi archaea && echo arc || echo bac)
+        domain=$(awk -v mag="{wildcards.sample}" 'BEGIN{{FS="\t"}} $1==mag {{print $2}}' {input.gtdb})
         # Run barrnap for rRNA prediction
-        barrnap --kingdom "$kingdom" < {input.mag} > {output.gff} 2> {LOGS}/barrnap_{wildcards.sample}.log || true
-        # Extract 16S features to FASTA (build a BED file)
-        awk '$3=="rRNA" && $9 ~ /16S/' {output.gff} | awk 'BEGIN{{OFS="\t"}}{{print $1,$4-1,$5,"16S_"NR,0,$7}}' > {RRNA_DIR}/{wildcards.sample}.16S.bed
-        # Extract sequences if 16S found
-        if [ -s {RRNA_DIR}/{wildcards.sample}.16S.bed ]; then
-            bedtools getfasta -fi {input.mag} -bed {RRNA_DIR}/{wildcards.sample}.16S.bed -fo {output.fasta} || true
+        if echo "$domain" | grep -qi "Archaea"; then
+            barrnap --quiet --threads {threads} --kingdom arc --outseq {output.rna_fasta} {input.mag} > {output.gff} 2> {log}
         else
-            touch {output.fasta}
+            barrnap --quiet --threads {threads} --kingdom bac --outseq {output.rna_fasta} {input.mag} > {output.gff} 2> {log}
         fi
+
         # Count rRNAs by type
         five=$(grep -c "5S" {output.gff} || true)
         sixteen=$(grep -c "16S" {output.gff} || true)
@@ -38,4 +36,33 @@ rule rrna_barrnap:
         echo -e "$five\t$sixteen\t$twentythree\t$total" >> {output.tsv}
         """
 
-# No aggregate rule
+# Extract the longest 16S rRNA sequence for downstream taxonomy analysis
+rule extract_longest_16s:
+    conda: ENV["seqkit"]
+    input:
+        gff=RRNA_DIR / "{sample}.rRNA.gff",
+        rna_fasta=RRNA_DIR / "{sample}.rRNA.fna"
+    output:
+        fasta=RRNA_DIR / "{sample}.16S.fasta"
+    shell:
+        r"""
+        # Check for 16S annotations
+        if grep -q "16S" {input.gff}; then
+            # Extract all 16S sequences and sort by length
+            grep "16S" {input.gff} | \
+            awk -F'\t' '{{print $1, $4, $5}}' | \
+            while read contig start end; do
+                len=$((end - start + 1))
+                echo "$contig:$start-$end $len"
+            done | \
+            sort -k2,2nr | \
+            head -n1 | \
+            cut -d' ' -f1 | \
+            xargs -I{{}} seqkit faidx {input.rna_fasta} "{{}}" > {output.fasta}
+        else
+            # if no 16S found, create an empty fasta file
+            touch {output.fasta}
+        fi
+        """
+
+
