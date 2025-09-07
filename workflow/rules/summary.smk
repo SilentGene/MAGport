@@ -3,10 +3,15 @@
 # orfs.smk: num_ORFs
 # checkm.smk: Completeness, Contamination
 # gunc.smk: GUNC_status
+# park.smk: Park_Score
+# mimag.smk: MIMAG_level
 # trnas.smk: num_tRNAs
 # rnas.smk: num_16S_rRNAs, num_23S_rRNAs, num_5S_rRNAs
 # gtdb.smk: GTDB_taxonomy
 # 16s.smk: 16S_taxonomy
+
+# output columns:
+# MAG	num_contigs	genome_size_bp	N50	GC	sum_ambiguous_bases	num_ORFs	Completeness	Contamination	GUNC_status	Park_Score	MIMAG_level	num_tRNAs	num_16S_rRNAs	num_23S_rRNAs	num_5S_rRNAs	16S_taxonomy	GTDB_taxonomy
 
 rule collect_summary:
     conda: ENV["python"]
@@ -18,6 +23,7 @@ rule collect_summary:
         checkm1=get_dir("checkm", "03_quality/checkm") / "checkm1_summary.tsv" if USE_CHECKM == "checkm1" else [],
         gunc=get_dir("gunc", "03_quality/gunc") / "GUNC_summary.tsv",
         mimag=expand(get_dir("mimag", "03_quality/mimag") / "{sample}.MIMAG_level.tsv", sample=SAMPLE_LIST),
+        park=expand(get_dir("park", "03_quality/park") / "{sample}.park.tsv", sample=SAMPLE_LIST),
         # Gene content
         orfs=expand(get_dir("orfs", "02_genes/orfs") / "{sample}.orfs.tsv", sample=SAMPLE_LIST),
         trnas=expand(get_dir("trna", "02_genes/trna") / "{sample}.tRNA.tsv", sample=SAMPLE_LIST),
@@ -25,7 +31,6 @@ rule collect_summary:
         # Taxonomy
         gtdb=get_dir("gtdbtk", "04_taxonomy/gtdbtk") / "gtdb.merged_summary.tsv",
         r16s=expand(get_dir("r16s", "04_taxonomy/16S") / "{sample}.16S.tsv", sample=SAMPLE_LIST)
-        # MIMAG quality
         
     output:
         tsv=SUMMARY_TSV
@@ -35,6 +40,16 @@ rule collect_summary:
     shell:
         r"""
         python workflow/scripts/summary.py \
+            --seqkit {' '.join(input.seqkit)} \
+            --checkm {input.checkm2 if USE_CHECKM == "checkm2" else input.checkm1} \
+            --gunc {input.gunc} \
+            --mimag {' '.join(input.mimag)} \
+            --park {' '.join(input.park)} \
+            --orfs {' '.join(input.orfs)} \
+            --trnas {' '.join(input.trnas)} \
+            --rrnas {' '.join(input.rrnas)} \
+            --gtdb {input.gtdb} \
+            --16s {' '.join(input.r16s)} \
             --output {output.tsv} \
             --results {params.result_dir} \
             --checkm {params.use_checkm}

@@ -19,7 +19,7 @@ rule run_gtdbtk:
         db=GTDBTK_DB
     log:
         str(LOGS / "gtdbtk.log")
-    threads: min(8, THREADS)
+    threads: THREADS
     shell:
         r"""
         mkdir -p {GTDB_DIR}

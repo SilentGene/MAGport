@@ -10,7 +10,7 @@ rule trna_scan:
     output:
         tsv=str(TRNA_DIR / "{sample}.tRNA.tsv")
     log:
-        str(LOGS / "{sample}.trnascan.log")
+        str(LOGS / "tRNAscan.{sample}.log")
     threads: 1
     shell:
         r"""
@@ -22,7 +22,7 @@ rule trna_scan:
         if echo "$domain" | grep -qi "Archaea"; then
             tRNAscan-SE -A -o {TRNA_DIR}/{wildcards.sample}.trnascan.txt {input.mag} --log {log} --quiet --thread {threads}
         else
-            tRNAscan-SE -B -o {TRNA_DIR}/{wildcards.sample}.tranascan.txt {input.mag} --log {log} --quiet --thread {threads}
+            tRNAscan-SE -B -o {TRNA_DIR}/{wildcards.sample}.trnascan.txt {input.mag} --log {log} --quiet --thread {threads}
         fi
 
         count=$(grep -vc '^#' {TRNA_DIR}/{wildcards.sample}.trnascan.txt)

@@ -4,6 +4,8 @@ import sys
 import csv
 from pathlib import Path
 
+# Usage: python mimag.py quality.tsv trna.tsv rrna.tsv out.tsv --mag MAG1 --method checkm2
+
 """MIMAG classification
 HQ: Completeness > 90, Contamination < 5, tRNA >= 18, rRNA has 5S,16S,23S
 MQ: Completeness >= 50, Contamination < 10
@@ -19,7 +21,8 @@ def main(quality_tsv: Path, trna_tsv: Path, rrna_tsv: Path, out_tsv: Path, mag_n
         if method == "checkm2":
             # For CheckM2, find the row with matching genome name
             for row in csv.DictReader(f, delimiter='\t'):
-                if mag_name in row.get("genome", ""):
+                if mag_name in row.get("Name", ""):
+                    print(f"found quality row for {mag_name}")
                     comp = float(row.get("Completeness", 0) or 0)
                     cont = float(row.get("Contamination", 0) or 0)
                     break
@@ -59,6 +62,7 @@ def main(quality_tsv: Path, trna_tsv: Path, rrna_tsv: Path, out_tsv: Path, mag_n
         w = csv.writer(f, delimiter='\t')
         w.writerow(["MIMAG"])
         w.writerow([quality])
+    print(f"MIMAG for {mag_name}: {quality} (comp={comp}, cont={cont}, tRNA={trna_count}, 5S={has_5s},16S={has_16s},23S={has_23s})")
 
 if __name__ == "__main__":
     import argparse
