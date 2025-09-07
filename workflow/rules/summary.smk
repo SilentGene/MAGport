@@ -36,21 +36,22 @@ rule collect_summary:
         tsv=SUMMARY_TSV
     params:
         result_dir=OUTPUT_DIR,
-        use_checkm=USE_CHECKM
+        use_checkm=USE_CHECKM,
+        checkm_input=lambda w, input: input.checkm2 if USE_CHECKM == "checkm2" else input.checkm1
     shell:
         r"""
         python workflow/scripts/summary.py \
-            --seqkit {' '.join(input.seqkit)} \
-            --checkm {input.checkm2 if USE_CHECKM == "checkm2" else input.checkm1} \
+            --seqkit {input.seqkit} \
+            --checkm {params.checkm_input} \
             --gunc {input.gunc} \
-            --mimag {' '.join(input.mimag)} \
-            --park {' '.join(input.park)} \
-            --orfs {' '.join(input.orfs)} \
-            --trnas {' '.join(input.trnas)} \
-            --rrnas {' '.join(input.rrnas)} \
+            --mimag {input.mimag} \
+            --park {input.park} \
+            --orfs {input.orfs} \
+            --trnas {input.trnas} \
+            --rrnas {input.rrnas} \
             --gtdb {input.gtdb} \
-            --16s {' '.join(input.r16s)} \
+            --16s {input.r16s} \
             --output {output.tsv} \
             --results {params.result_dir} \
-            --checkm {params.use_checkm}
+            --checkm-method {params.use_checkm}
         """

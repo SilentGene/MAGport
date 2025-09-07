@@ -57,7 +57,6 @@ def main(
         "--rerun-incomplete",
         "--printshellcmds",
         "--config",
-        "--nolock",  # Added to avoid lock issues
         *config_args,
     ]
     if force_rerun:

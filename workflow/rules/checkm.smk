@@ -11,7 +11,7 @@ rule run_checkm2:
     output:
         summary=QUALITY_DIR / "checkm2_summary.tsv"
     benchmark:
-        str(BENCHMARKS / "run_checkm2.benchmark.txt")
+        str(BENCHMARKS / "checkm2.benchmark.txt")
     params:
         indir=ORF_DIR,
         db=str(CHECKM2_DB / "uniref100.KO.1.dmnd"),
@@ -36,7 +36,7 @@ rule run_checkm1:
     output:
         summary=QUALITY_DIR / "checkm1_summary.tsv"
     benchmark:
-        str(BENCHMARKS / "run_checkm1.benchmark.txt")
+        str(BENCHMARKS / "checkm1.benchmark.txt")
     params:
         indir=ORF_DIR,
         db=CHECKM1_DB
