@@ -85,19 +85,19 @@ $(document).ready(function() {{
     const xs = data.map(r=>parseFloat(r[cols[contCol].title])||0);
     const ys = data.map(r=>parseFloat(r[cols[compCol].title])||0);
     const text = data.map(r=>r[cols[magCol]?.title]||'');
+    
     const size = data.map(r=>Math.max(10, Math.min(80, (parseFloat(r['genome_size_bp']||r['Genome_Size'])||0)/5e5 )));
     const color = data.map(r=>r['GTDB_taxonomy']?.split(';')[1]?.replace('p__','')||'');
-    Plotly.newPlot('scatter', [{
+    Plotly.newPlot('scatter', [{{
       x:xs,
       y:ys,
       text,
       mode:'markers',
-      marker:{size, color, opacity:0.8},
-      type:'scattergl',
-  hovertemplate: 'MAG: %{{text}}<br>Contamination: %{{x}}<br>Completeness: %{{y}}<extra></extra>'
-    }], {
-      title:'Completeness vs Contamination', xaxis:{title:'Contamination (%)'}, yaxis:{title:'Completeness (%)'}
-    });
+      marker:{{size, color, opacity:0.8}},
+      type:'scattergl'
+    }}], {{
+      title:'Completeness vs Contamination', xaxis:{{title:'Contamination (%)'}}, yaxis:{{title:'Completeness (%)'}}
+    }});
     document.getElementById('scatter').on('plotly_selected', ev=>{{
       if(!ev || !ev.points) return; const ids = new Set(ev.points.map(p=>text[p.pointIndex]));
       $.fn.dataTable.ext.search = [function(settings, rowData, dataIndex) {{ return ids.size===0 || ids.has(rowData[magCol]); }}];
