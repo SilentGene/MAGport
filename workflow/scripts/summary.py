@@ -112,7 +112,7 @@ def main(args):
 
     # 输出
     columns = [
-        "MAG", "num_contigs", "genome_size_bp", "N50", "GC", "sum_ambiguous_bases",
+        "ID", "num_contigs", "genome_size_bp", "N50", "GC", "sum_ambiguous_bases",
         "num_ORFs", "Completeness", "Contamination", "GUNC_status", "Park_Score", "MIMAG_level",
         "num_tRNAs", "num_16S_rRNAs", "num_23S_rRNAs", "num_5S_rRNAs", "16S_NCBI_taxonomy", "16S_blastn_identity", "GTDB_taxonomy"
     ]

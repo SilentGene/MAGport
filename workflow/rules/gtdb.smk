@@ -1,22 +1,21 @@
 # Module 8: GTDB-Tk taxonomy
 
 GTDB_DIR = get_dir("gtdbtk", "04_taxonomy/gtdbtk")
-ORF_DIR = get_dir("orfs", "02_genes/orfs")
 
 
 rule run_gtdbtk:
     conda: ENV["gtdbtk"]
     input:
-        orfs=expand(str(ORF_DIR / "{sample}.faa"), sample=SAMPLE_LIST),
-        genes=expand(str(ORF_DIR / "{sample}.fna"), sample=SAMPLE_LIST)
+        mag=MAGS
     output:
         summary=GTDB_DIR / "gtdb.merged_summary.tsv"
     benchmark:
         str(BENCHMARKS / "gtdbtk.benchmark.txt")
     params:
-        indir=ORF_DIR,
+        indir=INPUT_DIR,
         pplacer=lambda w: min(THREADS, 3),
-        db=GTDBTK_DB
+        db=GTDBTK_DB,
+        suffix=EXT
     log:
         str(LOGS / "gtdbtk.log")
     threads: THREADS
@@ -27,13 +26,13 @@ rule run_gtdbtk:
         export GTDBTK_DATA_PATH={params.db}
         
         # Run GTDB-Tk classify_wf on all genomes
-        (gtdbtk classify_wf \
+        gtdbtk classify_wf \
             --genome_dir {params.indir} \
-            --genes --skip_ani_screen \
+            --skip_ani_screen \
             --out_dir {GTDB_DIR} \
             --cpus {threads} \
             --pplacer_cpus {params.pplacer} \
-            -x .faa) &> {log}
+            -x {params.suffix} &> {log}
 
         # if both summary files exist, merge them
         echo "Merging GTDB-Tk summary files..."

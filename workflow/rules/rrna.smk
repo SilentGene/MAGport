@@ -12,7 +12,7 @@ rule rrna_barrnap:
         rna_fasta=str(RRNA_DIR / "{sample}.rRNA.fna"),
         tsv=str(RRNA_DIR / "{sample}.rRNA.tsv")
     log:
-        str(LOGS / "{sample}.barrnap.log")
+        str(LOGS / "barrnap.{sample}.log")
     threads: 1
     shell:
         r"""
