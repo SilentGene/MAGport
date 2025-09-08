@@ -88,13 +88,15 @@ $(document).ready(function() {{
     
     const size = data.map(r=>Math.max(10, Math.min(80, (parseFloat(r['genome_size_bp']||r['Genome_Size'])||0)/5e5 )));
     const color = data.map(r=>r['GTDB_taxonomy']?.split(';')[1]?.replace('p__','')||'');
+    console.log('scatter text:', text);
     Plotly.newPlot('scatter', [{{
       x:xs,
       y:ys,
-      text,
+      text:text,
       mode:'markers',
       marker:{{size, color, opacity:0.8}},
-      type:'scattergl'
+      type:'scattergl',
+      hovertemplate: 'MAG: %{{text}}<br>Completeness: %{{y}}<br>Contamination: %{{x}}<extra></extra>'
     }}], {{
       title:'Completeness vs Contamination', xaxis:{{title:'Contamination (%)'}}, yaxis:{{title:'Completeness (%)'}}
     }});
