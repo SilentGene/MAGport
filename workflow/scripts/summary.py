@@ -38,8 +38,8 @@ def parse_gunc(path, mag):
         rdr = csv.DictReader(f, delimiter='\t')
         for row in rdr:
             if row.get("genome") == mag:
-                return {"GUNC_status": row.get("pass.GUNC", "")}
-    return {"GUNC_status": ""}
+                return {"pass_GUNC": row.get("pass.GUNC", "")}
+    return {"pass_GUNC": ""}
 
 def parse_park(path):
     with open(path) as f:
@@ -113,7 +113,7 @@ def main(args):
     # 输出
     columns = [
         "ID", "num_contigs", "genome_size_bp", "N50", "GC", "sum_ambiguous_bases",
-        "num_ORFs", "Completeness", "Contamination", "GUNC_status", "Park_Score", "MIMAG_level",
+        "num_ORFs", "Completeness", "Contamination", "pass_GUNC", "Park_Score", "MIMAG_level",
         "num_tRNAs", "num_16S_rRNAs", "num_23S_rRNAs", "num_5S_rRNAs", "16S_NCBI_taxonomy", "16S_blastn_identity", "GTDB_taxonomy"
     ]
     with open(args.output, 'w', newline='') as f:
