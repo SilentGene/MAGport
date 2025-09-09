@@ -67,9 +67,14 @@ GTDBTK_DB = get_db_path("gtdbtk_db_dir", "GTDBTK_DB_PATH", "resources/gtdbtk")
 
 # Verify databases before workflow starts
 # Import database verification function
+
+# Get workflow directory (directory containing the Snakefile)
+workflow.workflow_dir = os.path.dirname(workflow.snakefile)
+
 verify_all_databases = None
-with open("workflow/rules/databases.smk", 'rt') as f:
-    exec(compile(f.read(), "workflow/rules/databases.smk", 'exec'))
+db_rule_path = os.path.join(workflow.workflow_dir, "rules", "databases.smk")
+with open(db_rule_path, 'rt') as f:
+    exec(compile(f.read(), db_rule_path, 'exec'))
 
 onstart:
     try:
@@ -166,17 +171,19 @@ ENV = {k: os.path.join(workflow.workflow_dir, "envs", f"{k}.yaml") for k in [
     "python"
 ]}
 
-# Include rules
-include: "rules/databases.smk"
-include: "rules/stats.smk"
-include: "rules/checkm.smk"
-include: "rules/park.smk"
-include: "rules/gunc.smk"
-include: "rules/rrna.smk"
-include: "rules/trna.smk"
-include: "rules/orfs.smk"
-include: "rules/gtdb.smk"
-include: "rules/rrna16s.smk"
-include: "rules/mimag.smk"
-include: "rules/summary.smk"
-include: "rules/report.smk"
+
+# Include rules using absolute paths
+import os
+include: os.path.join(workflow.workflow_dir, "rules", "databases.smk")
+include: os.path.join(workflow.workflow_dir, "rules", "stats.smk")
+include: os.path.join(workflow.workflow_dir, "rules", "checkm.smk")
+include: os.path.join(workflow.workflow_dir, "rules", "park.smk")
+include: os.path.join(workflow.workflow_dir, "rules", "gunc.smk")
+include: os.path.join(workflow.workflow_dir, "rules", "rrna.smk")
+include: os.path.join(workflow.workflow_dir, "rules", "trna.smk")
+include: os.path.join(workflow.workflow_dir, "rules", "orfs.smk")
+include: os.path.join(workflow.workflow_dir, "rules", "gtdb.smk")
+include: os.path.join(workflow.workflow_dir, "rules", "rrna16s.smk")
+include: os.path.join(workflow.workflow_dir, "rules", "mimag.smk")
+include: os.path.join(workflow.workflow_dir, "rules", "summary.smk")
+include: os.path.join(workflow.workflow_dir, "rules", "report.smk")

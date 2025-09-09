@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 import os
 import shlex
 import sys
@@ -8,6 +9,7 @@ from typing import Optional
 import typer
 from rich.console import Console
 from rich.table import Table
+import yaml
 
 app = typer.Typer(add_completion=False, help="MAGport CLI")
 console = Console()
@@ -30,21 +32,30 @@ def main(
     snake_args: Optional[str] = typer.Option(None, "--snake_args", help="Extra Snakemake args, e.g. --snake_args '--unlock'"),
 ):
     """Run MAGport Snakemake workflow."""
+
     input_dir = _abs(input_dir)
     output_dir = _abs(output_dir)
-
     os.makedirs(output_dir, exist_ok=True)
 
-    # Build snakemake command
-    snakefile = str(Path(__file__).parent.parent / "workflow" / "Snakefile")
-    config_args = [
-        f"input_dir={shlex.quote(input_dir)}",
-        f"output_dir={shlex.quote(output_dir)}",
-        f"file_extension={shlex.quote(file_extension)}",
-        f"threads={threads}",
-        f"modules={shlex.quote(modules)}",
-    ]
+    # 1. 读取默认 config.yaml
+    default_config_path = Path(__file__).parent.parent / "config" / "config.yaml"
+    with open(default_config_path, "r", encoding="utf-8") as f:
+        config_data = yaml.safe_load(f)
 
+    # 2. 用 CLI 参数覆盖/补充
+    config_data["input_dir"] = input_dir
+    config_data["output_dir"] = output_dir
+    config_data["file_extension"] = file_extension
+    config_data["threads"] = threads
+    config_data["modules"] = modules
+
+    # 3. 写入输出目录下的 config.yaml
+    new_config_path = Path(output_dir) / "config.yaml"
+    with open(new_config_path, "w", encoding="utf-8") as f:
+        yaml.safe_dump(config_data, f, sort_keys=False, allow_unicode=True)
+
+    # 4. 构建 snakemake 命令，使用新的 config.yaml
+    snakefile = str(Path(__file__).parent.parent / "workflow" / "Snakefile")
     cmd = [
         sys.executable,
         "-m",
@@ -56,8 +67,8 @@ def main(
         "--use-conda",
         "--rerun-incomplete",
         "--printshellcmds",
-        "--config",
-        *config_args,
+        "--configfile",
+        str(new_config_path),
     ]
     if force_rerun:
         cmd += ["--forceall"]
