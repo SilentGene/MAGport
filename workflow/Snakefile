@@ -92,7 +92,10 @@ SAMPLE_LIST = sorted(SAMPLES.keys())  # e.g. ['MAG1', 'MAG2', ...]
 if not MAGS:
     print(f"[MAGport] No MAGs found in {INPUT_DIR} with extension {EXT}. The workflow will not proceed.")
     sys.exit(1)
-
+else:
+    # write SAMPLES to a file "input_MAGs.txt" in the output directory for reference
+    open(OUTPUT_DIR / "input_MAGs.txt", 'w').write("\n".join(f"{k}\t{v}" for k,v in SAMPLES.items()))
+    print(f"[MAGport] Found {len(MAGS)} MAGs in {INPUT_DIR} with extension {EXT}.")
 
 # Targets
 def per_mag_outputs(module: str):

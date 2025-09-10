@@ -36,11 +36,13 @@ rule collect_summary:
         tsv=SUMMARY_TSV
     params:
         result_dir=OUTPUT_DIR,
+        mags=OUTPUT_DIR / "input_MAGs.txt",
         use_checkm=USE_CHECKM,
         checkm_input=lambda w, input: input.checkm2 if USE_CHECKM == "checkm2" else input.checkm1
     shell:
         r"""
         python workflow/scripts/summary.py \
+            --mags {params.mags} \
             --seqkit {input.seqkit} \
             --checkm {params.checkm_input} \
             --gunc {input.gunc} \

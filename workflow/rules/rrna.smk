@@ -39,7 +39,6 @@ rule rrna_barrnap:
 
 # Extract the longest 16S rRNA sequence for downstream taxonomy analysis
 rule extract_longest_16s:
-    conda: ENV["seqkit"]
     input:
         rna_fasta=RRNA_DIR / "{sample}.rRNA.fna"
     output:
