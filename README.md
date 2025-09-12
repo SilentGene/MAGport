@@ -14,16 +14,16 @@ The name "MAGport" has multiple meaningful interpretations:
 
 MAGport is a modular workflow that provides:
 
-- Basic genome statistics (SeqKit)
-- Quality assessment (CheckM2/CheckM1)
-- Chimerism detection (GUNC)
-- rRNA prediction (barrnap)
-- tRNA scanning (tRNAscan-SE)
-- Gene prediction (Prodigal)
-- Taxonomic classification (GTDB-Tk)
-- 16S-based taxonomy (BLAST)
-- Park score calculation
-- MIMAG quality classification
+1. Basic genome statistics (SeqKit)
+2. Gene prediction (Prodigal)
+3. Quality assessment (CheckM2/CheckM1)
+4. Chimerism detection (GUNC)
+5. rRNA prediction (barrnap)
+6. tRNA scanning (tRNAscan-SE)
+7. Taxonomic classification (GTDB-Tk)
+8. 16S-based taxonomy (BLAST)
+9. Park score calculation
+10. MIMAG quality classification
 
 **Outputs:** Interactive HTML report and consolidated TSV summary.
 
@@ -86,20 +86,28 @@ Default: All modules enabled.
 
 ## 🗄️ Database Configuration
 
-### Default Behavior
-By default, databases are stored in `resources/` under your output directory:
-```
-resources/
-├── checkm2_db/     # CheckM2 database
-├── gunc_db/        # GUNC database
-├── gtdbtk/         # GTDB-Tk reference data
-└── ncbi_16s/       # NCBI 16S BLAST database
-```
+### Required Databases
+
+- **CheckM2**: For genome quality assessment
+- **GUNC**: For chimerism detection
+- **GTDB-Tk**: For taxonomic classification
+- **NCBI 16S**: For 16S rRNA-based taxonomy
 
 ### Configuration Methods
 
-1. **Using config.yaml** (recommended):
-   Create `config.yaml` in your working directory:
+`MAGport` requires several databases described above. If you already have these databases, you can specify their paths using either of the following methods:
+
+1. **Set it and forget it** (recommended):
+   ```bash
+   magport database --checkm2 /path/to/checkm2_db \
+                    --gunc /path/to/gunc_db \
+                    --gtdb /path/to/gtdbtk_db \
+                    --ncbi16s /path/to/ncbi_16s
+   ```
+   This command modifies the default configuration file located at `MAGport/config/config.yaml`, and the specified paths will be used for all future runs.
+
+2. Manually edit the YAML config file
+   You can find it at `MAGport/config/config.yaml`:
    ```yaml
    # Database paths (absolute paths recommended)
    checkm2_db_dir: "/path/to/checkm2_db"
@@ -108,16 +116,27 @@ resources/
    ncbi16s_dir: "/path/to/ncbi_16s"
    ```
 
-2. **Using command line**:
+3. Database configuration via Environment Variables
+
+After downloading the databases, you can set database paths using environment variables:
+```bash
+export CHECKM2_DB_PATH="/path/to/checkm2_db"
+export GUNC_DB_PATH="/path/to/gunc_db"
+export GTDBTK_DB_PATH="/path/to/gtdbtk_db"
+export NCBI16S_DB_PATH="/path/to/ncbi_16s"
+```
+
+4. Using command line during execution
+   You can override database paths for a single run using `--snake_args`. I don't see why you would want to do this unless you have multiple versions of a database, but here it is:
    ```bash
    magport ... --snake_args "--config checkm2_db_dir=/path/to/checkm2_db"
    ```
 
-### Database Setup
+### Database Download
+
+If you don't have the required databases, `MAGport` can help you download and set them up.
 
 #### Easy Setup: Using the Download Command
-
-The simplest way to set up databases is using the `magport download` command:
 
 ```bash
 # Download all databases to specific locations
@@ -130,6 +149,9 @@ magport download \
 # Or download specific databases
 magport download --gtdb-path /opt/db/gtdb/
 ```
+
+> [!NOTE]
+> While MAGport can download multiple databases using a single command, it is advisable to download each database separately to avoid potential issues with network interruptions or timeouts.
 
 #### Manual Database download
 
@@ -149,29 +171,15 @@ wget "https://ftp.ncbi.nlm.nih.gov/blast/db/16S_ribosomal_RNA.tar.gz"
 tar -xzf 16S_ribosomal_RNA.tar.gz -C /path/to/ncbi_16s
 ```
 
-> **Note**: For shared computing environments, it's recommended to install databases in a shared location to avoid redundant downloads.
+> [!NOTE]
+> For shared computing environments, it's recommended to install databases in a shared location to avoid redundant downloads.
 
-#### Database configuration via Environment Variables
-
-After downloading the databases, you can set database paths using environment variables:
-```bash
-export CHECKM2_DB_PATH="/path/to/checkm2_db"
-export GUNC_DB_PATH="/path/to/gunc_db"
-export GTDBTK_DB_PATH="/path/to/gtdbtk_db"
-export NCBI16S_DB_PATH="/path/to/ncbi_16s"
-```
 
 ### Database Verification
 
-The pipeline automatically verifies database integrity before running:
+The pipeline automatically verifies database integrity before each running.
 
-- Checks for required database files and directories
-- Verifies database structure and completeness
-- Provides clear error messages if databases are missing or incomplete
-
-If a database is missing or invalid, you'll receive specific instructions on how to:
-1. Set up the database manually, or
-2. Use `magport download` to obtain the database
+If a database is missing or invalid, you'll receive notifications with specific instructions on how to configure it.
 
 To verify your database configuration without running the pipeline:
 ```bash
@@ -200,9 +208,6 @@ results/
 │   ├── gtdbtk/          # GTDB-Tk results
 │   └── 16S/             # 16S rRNA-based taxonomy
 └── logs/                # Runtime logs
-    ├── 16S/             # 16S-based taxonomy
-    ├── park/            # Park scores
-    └── mimag/           # Quality classification
 ```
 
 ## 📝 Notes
