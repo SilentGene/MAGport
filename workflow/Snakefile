@@ -12,7 +12,6 @@ OUTPUT_DIR = Path(config.get("output_dir", "results")).resolve()
 EXT = config.get("file_extension", ".fasta")
 THREADS = int(config.get("threads", 8))
 MODULES = set((config.get("modules", "stats,quality,park,gunc,rrna,trna,orfs,gtdb,rrna16S,mimag").split(',')))
-USE_CHECKM = config.get("use_checkm", "checkm2")
 
 # Database download paths (for magport download command)
 DB_BASE = Path(config.get("db_base", OUTPUT_DIR / "databases"))
@@ -60,7 +59,6 @@ def get_db_path(config_key: str, env_var: str, default: str) -> Path:
 
 # Databases with env var fallbacks
 CHECKM2_DB = get_db_path("checkm2_db_dir", "CHECKM2_DB_PATH", "resources/checkm2_db")
-CHECKM1_DB = get_db_path("checkm1_db_dir", "CHECKM1_DB_PATH", "resources/checkm1_db")
 GUNC_DB = get_db_path("gunc_db_dir", "GUNC_DB_PATH", "resources/gunc_db")
 NCBI16S_DIR = get_db_path("ncbi16s_dir", "NCBI16S_DB_PATH", "resources/ncbi_16s")
 GTDBTK_DB = get_db_path("gtdbtk_db_dir", "GTDBTK_DB_PATH", "resources/gtdbtk")
@@ -78,7 +76,7 @@ with open(db_rule_path, 'rt') as f:
 
 onstart:
     try:
-        if verify_all_databases:
+        if verify_all_databases and not config.get("skip_verify", False):
             verify_all_databases()
     except ValueError as e:
         print(f"[MAGport] Error: {e}")
@@ -90,8 +88,11 @@ SAMPLES = {Path(p).stem: str(Path(p).resolve()) for p in MAGS}  # e.g. {'MAG1': 
 SAMPLE_LIST = sorted(SAMPLES.keys())  # e.g. ['MAG1', 'MAG2', ...]
 
 if not MAGS:
-    print(f"[MAGport] No MAGs found in {INPUT_DIR} with extension {EXT}. The workflow will not proceed.")
-    sys.exit(1)
+    if not config.get("skip_verify", False):
+        print(f"[MAGport] No MAGs found in {INPUT_DIR} with extension {EXT}. The workflow will not proceed.")
+        sys.exit(1)
+    else:
+        print(f"[MAGport] No MAGs found in {INPUT_DIR}. Skipping execution but proceeding for DB download.")
 else:
     # write SAMPLES to a file "input_MAGs.txt" in the output directory for reference
     open(OUTPUT_DIR / "input_MAGs.txt", 'w').write("\n".join(f"{k}\t{v}" for k,v in SAMPLES.items()))
@@ -103,10 +104,7 @@ def per_mag_outputs(module: str):
     if module == "stats":
         outs = [get_dir("seqkit", "01_stats/seqkit")/(s+".seqkit.tsv") for s in SAMPLE_LIST]
     elif module == "quality":
-        if USE_CHECKM == "checkm2":
-            outs = [get_dir("checkm", "03_quality/checkm")/"checkm2_summary.tsv"]
-        else:
-            outs = [get_dir("checkm", "03_quality/checkm")/"checkm1_summary.tsv"]
+        outs = [get_dir("checkm", "03_quality/checkm")/"checkm2_summary.tsv"]
     elif module == "park":
         outs = [get_dir("park", "03_quality/park")/(s+".park.tsv") for s in SAMPLE_LIST]
     elif module == "gunc":
@@ -163,7 +161,6 @@ workflow.workflow_dir = os.path.dirname(workflow.snakefile)
 ENV = {k: os.path.join(workflow.workflow_dir, "envs", f"{k}.yaml") for k in [
     "seqkit",
     "checkm2",
-    "checkm1",
     "blast",
     "gunc",
     "barrnap",
@@ -177,6 +174,7 @@ ENV = {k: os.path.join(workflow.workflow_dir, "envs", f"{k}.yaml") for k in [
 
 # Include rules using absolute paths
 import os
+include: os.path.join(workflow.workflow_dir, "rules", "download.smk")
 include: os.path.join(workflow.workflow_dir, "rules", "databases.smk")
 include: os.path.join(workflow.workflow_dir, "rules", "stats.smk")
 include: os.path.join(workflow.workflow_dir, "rules", "checkm.smk")

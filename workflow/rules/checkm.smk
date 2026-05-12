@@ -1,4 +1,4 @@
-# Module 2: Quality via CheckM2 (default) or CheckM1
+# Module 2: Quality via CheckM2
 
 QUALITY_DIR = get_dir("checkm", "03_quality/checkm")
 ORF_DIR = get_dir("orfs", "02_genes/orfs")
@@ -17,7 +17,7 @@ rule run_checkm2:
         db=str(CHECKM2_DB / "uniref100.KO.1.dmnd"),
     log:
         str(LOGS / "checkm2.log")
-    threads: min(8, THREADS)
+    threads: min(config.get("max_threads", {}).get("checkm2", 8), THREADS)
     shell:
         r"""
         mkdir -p {QUALITY_DIR}
@@ -29,26 +29,7 @@ rule run_checkm2:
         mv {QUALITY_DIR}/quality_report.tsv {output.summary}
         """
 
-rule run_checkm1:
-    conda: ENV["checkm1"]
-    input:
-        orfs=expand(str(ORF_DIR / "{sample}.faa"), sample=SAMPLE_LIST)
-    output:
-        summary=QUALITY_DIR / "checkm1_summary.tsv"
-    benchmark:
-        str(BENCHMARKS / "checkm1.benchmark.txt")
-    params:
-        indir=ORF_DIR,
-        db=CHECKM1_DB
-    threads: THREADS
-    shell:
-        r"""
-        mkdir -p {QUALITY_DIR}
-        checkm lineage_wf -t {threads} -x .faa {params.indir} {QUALITY_DIR}
-        checkm qa -o 2 -t {threads} --tab_table --quiet \
-            --file {output.summary} \
-            {QUALITY_DIR}/lineage.ms {QUALITY_DIR}
-        """
+
 
 # No aggregate rule; Snakefile top-level expands per-sample outputs.
 

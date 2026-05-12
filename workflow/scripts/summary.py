@@ -17,8 +17,7 @@ python workflow/scripts/summary.py \
             --gtdb /mnt/hpccs01/work/microbiome/users/heyu/MAGport/test/test_output/04_taxonomy/gtdbtk/gtdb.merged_summary.tsv \
             --16s /mnt/hpccs01/work/microbiome/users/heyu/MAGport/test/test_output/04_taxonomy/16S/GCF_024346955.1_vmangrovi.16S.tsv /mnt/hpccs01/work/microbiome/users/heyu/MAGport/test/test_output/04_taxonomy/16S/MAG1.16S.tsv /mnt/hpccs01/work/microbiome/users/heyu/MAGport/test/test_output/04_taxonomy/16S/MAG209.16S.tsv \
             --output /mnt/hpccs01/work/microbiome/users/heyu/MAGport/test/test_output/MAGport_summary.tsv \
-            --results /mnt/hpccs01/work/microbiome/users/heyu/MAGport/test/test_output \
-            --checkm-method checkm2
+            --results /mnt/hpccs01/work/microbiome/users/heyu/MAGport/test/test_output
 """
 
 class DataLoader:
@@ -42,10 +41,7 @@ class DataLoader:
         with open(self.args.checkm) as f:
             rdr = csv.DictReader(f, delimiter='\t')
             for row in rdr:
-                if self.args.checkm_method == "checkm2":
-                    key = row.get("Name")
-                else:
-                    key = row.get("Bin Id")
+                key = row.get("Name")
                 if key:
                     data[key] = {
                         "Completeness": row.get("Completeness", ""),
@@ -233,7 +229,6 @@ if __name__ == "__main__":
     parser.add_argument("--mags", required=True, help="input_MAGs.txt file")
     parser.add_argument("--seqkit", nargs='+', required=True, help="SeqKit stats TSV files")
     parser.add_argument("--checkm", required=True, help="CheckM summary TSV file")
-    parser.add_argument("--checkm-method", choices=["checkm1", "checkm2"], required=True, help="CheckM version used")
     parser.add_argument("--gunc", required=True, help="GUNC summary TSV file")
     parser.add_argument("--mimag", nargs='+', required=True, help="MIMAG classification TSV files")
     parser.add_argument("--park", nargs='+', required=True, help="Park score TSV files")

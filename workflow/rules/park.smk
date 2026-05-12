@@ -6,21 +6,17 @@ rule park_score:
     conda: ENV["python"]
     input:
         stats=lambda wc: get_dir("seqkit", "01_stats/seqkit") / (wc.sample + ".seqkit.tsv"),
-        checkm2=get_dir("checkm", "03_quality/checkm") / "checkm2_summary.tsv" if USE_CHECKM == "checkm2" else [],
-        checkm1=get_dir("checkm", "03_quality/checkm") / "checkm1_summary.tsv" if USE_CHECKM == "checkm1" else []
+        checkm2=get_dir("checkm", "03_quality/checkm") / "checkm2_summary.tsv"
     output:
         tsv=str(PARK_DIR / "{sample}.park.tsv")
-    params:
-        quality_input=lambda wildcards, input: input.checkm2 if USE_CHECKM == "checkm2" else input.checkm1
     shell:
         r"""
         mkdir -p {PARK_DIR}
         python workflow/scripts/park_score.py \
             {input.stats} \
-            {params.quality_input} \
+            {input.checkm2} \
             {output.tsv} \
-            --mag {wildcards.sample} \
-            --method {USE_CHECKM}
+            --mag {wildcards.sample}
         """
 
 # No aggregate rule; top-level targets are expanded in Snakefile

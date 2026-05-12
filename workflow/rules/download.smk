@@ -81,11 +81,7 @@ rule download_ncbi16s_db:
         touch .downloaded
         """
         
-        # Build DIAMOND database
-        echo "Building DIAMOND database..."
-        diamond makedb --in {output.fasta} --db {output.db}
-        touch {output[0]}/.downloaded
-        """
+
 
 # Master rule for database downloads
 rule download_databases:

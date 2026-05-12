@@ -24,8 +24,8 @@ def check_db_path(db_path, db_name):
 def verify_all_databases():
     """Verify all required databases before workflow starts"""
     # 获取全局变量
-    global MODULES, USE_CHECKM
-    global GTDBTK_DB, CHECKM2_DB, CHECKM1_DB, GUNC_DB, NCBI16S_DIR
+    global MODULES
+    global GTDBTK_DB, CHECKM2_DB, GUNC_DB, NCBI16S_DIR
     
     try:
         # 检查哪些模块被启用
@@ -36,10 +36,7 @@ def verify_all_databases():
             check_db_path(GTDBTK_DB, "GTDBTK")
         
         if "quality" in enabled_modules:
-            if USE_CHECKM == "checkm2":
-                check_db_path(CHECKM2_DB, "CHECKM2")
-            else:
-                check_db_path(CHECKM1_DB, "CHECKM1")
+            check_db_path(CHECKM2_DB, "CHECKM2")
         
         if "gunc" in enabled_modules:
             check_db_path(GUNC_DB, "GUNC")

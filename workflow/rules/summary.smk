@@ -19,8 +19,7 @@ rule collect_summary:
         # Basic stats
         seqkit=expand(get_dir("seqkit", "01_stats/seqkit") / "{sample}.seqkit.tsv", sample=SAMPLE_LIST),
         # Quality assessment
-        checkm2=get_dir("checkm", "03_quality/checkm") / "checkm2_summary.tsv" if USE_CHECKM == "checkm2" else [],
-        checkm1=get_dir("checkm", "03_quality/checkm") / "checkm1_summary.tsv" if USE_CHECKM == "checkm1" else [],
+        checkm2=get_dir("checkm", "03_quality/checkm") / "checkm2_summary.tsv",
         gunc=get_dir("gunc", "03_quality/gunc") / "GUNC_summary.tsv",
         mimag=expand(get_dir("mimag", "03_quality/mimag") / "{sample}.MIMAG_level.tsv", sample=SAMPLE_LIST),
         park=expand(get_dir("park", "03_quality/park") / "{sample}.park.tsv", sample=SAMPLE_LIST),
@@ -36,15 +35,13 @@ rule collect_summary:
         tsv=SUMMARY_TSV
     params:
         result_dir=OUTPUT_DIR,
-        mags=OUTPUT_DIR / "input_MAGs.txt",
-        use_checkm=USE_CHECKM,
-        checkm_input=lambda w, input: input.checkm2 if USE_CHECKM == "checkm2" else input.checkm1
+        mags=OUTPUT_DIR / "input_MAGs.txt"
     shell:
         r"""
         python workflow/scripts/summary.py \
             --mags {params.mags} \
             --seqkit {input.seqkit} \
-            --checkm {params.checkm_input} \
+            --checkm {input.checkm2} \
             --gunc {input.gunc} \
             --mimag {input.mimag} \
             --park {input.park} \
@@ -54,6 +51,5 @@ rule collect_summary:
             --gtdb {input.gtdb} \
             --16s {input.r16s} \
             --output {output.tsv} \
-            --results {params.result_dir} \
-            --checkm-method {params.use_checkm}
+            --results {params.result_dir}
         """

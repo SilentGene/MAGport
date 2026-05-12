@@ -16,7 +16,7 @@ MAGport is a modular workflow that provides:
 
 1. Basic genome statistics (SeqKit)
 2. Gene prediction (Prodigal)
-3. Quality assessment (CheckM2/CheckM1)
+3. Quality assessment (CheckM2)
 4. Chimerism detection (GUNC)
 5. rRNA prediction (barrnap)
 6. tRNA scanning (tRNAscan-SE)
@@ -29,46 +29,28 @@ MAGport is a modular workflow that provides:
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
-- **Recommended:** Conda/Mamba for environment management
-- **Alternative:** Pixi (note: Snakemake will still create per-rule Conda envs)
-- Python 3.9 or later
-
 ### Installation
 
-Choose one of these methods:
-
-1. **Direct Use** (no installation):
-   ```bash
-   # Ensure conda/mamba is in PATH
-   python -m magport --help
-   ```
-
-2. **CLI Installation**:
-   ```bash
-   pip install -e .
-   ```
-
-3. **Pixi** (optional):
-   ```bash
-   # Create and activate pixi environment
-   pixi run snakemake
-   ```
+```bash
+git clone https://github.com/SilentGene/MAGport.git
+cd MAGport
+conda env create -f magport.yaml
+conda activate magport
+```
 
 ### Basic Usage
 
 Run the pipeline:
 ```bash
-magport --input_dir <mags_dir> \
+magport report --input_dir <mags_dir> \
         --output_dir <results_dir> \
         --threads 16 \
         --file_extension .fa
 ```
 
-Start with a dry run:
+Start with a dry run to test:
 ```bash
-magport -i <mags_dir> -o <results_dir> --threads 4 --snake_args "-n"
+magport report -i <mags_dir> -o <results_dir> --threads 4 --snake_args "-n"
 ```
 
 ## 📦 Modules
@@ -99,7 +81,7 @@ Default: All modules enabled.
 
 1. **Set it and forget it** (recommended):
    ```bash
-   magport database --checkm2 /path/to/checkm2_db \
+   magport db-config --checkm2 /path/to/checkm2_db \
                     --gunc /path/to/gunc_db \
                     --gtdb /path/to/gtdbtk_db \
                     --ncbi16s /path/to/ncbi_16s
@@ -140,14 +122,14 @@ If you don't have the required databases, `MAGport` can help you download and se
 
 ```bash
 # Download all databases to specific locations
-magport download \
+magport db-download \
   --gtdb-path /path/to/gtdb/ \
   --checkm2-db-path /path/to/checkm2db/ \
   --gunc-path /path/to/gunc/ \
   --ncbi16s-path /path/to/ncbi16s/
 
 # Or download specific databases
-magport download --gtdb-path /opt/db/gtdb/
+magport db-download --gtdb-path /opt/db/gtdb/
 ```
 
 > [!NOTE]
@@ -171,10 +153,6 @@ wget "https://ftp.ncbi.nlm.nih.gov/blast/db/16S_ribosomal_RNA.tar.gz"
 tar -xzf 16S_ribosomal_RNA.tar.gz -C /path/to/ncbi_16s
 ```
 
-> [!NOTE]
-> For shared computing environments, it's recommended to install databases in a shared location to avoid redundant downloads.
-
-
 ### Database Verification
 
 The pipeline automatically verifies database integrity before each running.
@@ -184,7 +162,7 @@ If a database is missing or invalid, you'll receive notifications with specific 
 To verify your database configuration without running the pipeline:
 ```bash
 # Do a dry run with verbose output
-magport -i test/mags -o test/output --snake_args "-n -p"
+magport report -i test/mags -o test/output --snake_args "-n -p"
 ```
 
 ## 📊 Outputs
@@ -200,7 +178,7 @@ results/
 │   ├── rrna/            # Predicted rRNAs
 │   └── trna/            # Predicted tRNAs
 ├── 03_quality/           # Quality assessment
-│   ├── checkm/          # CheckM2/CheckM1 results
+│   ├── checkm/          # CheckM2 results
 │   ├── gunc/            # Contamination assessment
 │   ├── park/            # MIMAG quality score
 │   └── mimag/           # MIMAG compliance report
@@ -212,12 +190,7 @@ results/
 
 ## 📝 Notes
 
-- First run creates Conda environments under `.snakemake/conda/`
+- First run creates Conda environments under `~/.snakemake/conda/` or the path specified by `--conda-prefix`
+- As GTDB-tk usually consume a lot of resources, we recommend using specs: CPU >= 16, RAM >= 140 GB
 
-## 🤝 Contributing
-
-Contributions welcome! Please read our contributing guidelines and submit pull requests.
-
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+...🧙‍♂️🧬

@@ -16,7 +16,7 @@ rule gunc_run_all:
         db=str(GUNC_DB / "gunc_db_gtdb95.dmnd")
     log:
         str(LOGS / "gunc.log")
-    threads: min(8, THREADS)
+    threads: min(config.get("max_threads", {}).get("gunc", 8), THREADS)
     shell:
         r"""
         mkdir -p {GUNC_DIR}

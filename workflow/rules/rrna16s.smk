@@ -10,7 +10,7 @@ rule rrna16s_blast:
         tsv=str(R16_DIR / "{sample}.16S.tsv")
     params:
         db=NCBI16S_DIR / "16S_ribosomal_RNA"  # Path to BLAST database without extension
-    threads: min(4, THREADS)
+    threads: min(config.get("max_threads", {}).get("blastn", 4), THREADS)
     run:
         shell(r"""
         mkdir -p {R16_DIR}

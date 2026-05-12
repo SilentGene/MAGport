@@ -1,17 +1,27 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "magport"
 version = "0.1.0"
 description = "MAGport: A Snakemake pipeline for MAG characterization"
 readme = "README.md"
-authors = [{ name = "MAGport Authors" }]
-license = "MIT"
-requires-python = ">=3.9"
+authors = [
+  { name="Heyu Lin", email="heyu.lin@qut.edu.au" },
+]
+license = {file = "LICENSE"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+requires-python = ">=3.11"
 dependencies = [
-  "snakemake>=7.32,<9",
+  "snakemake>=9.0",
   "pandas>=2.0",
   "jinja2>=3.1",
   "plotly>=5.15",
@@ -20,8 +30,22 @@ dependencies = [
   "rich>=13.0",
 ]
 
+[project.urls]
+homepage = "https://github.com/SilentGene/MAGport"
+
 [project.scripts]
 magport = "magport.cli:app"
 
-[tool.setuptools]
-packages = ["magport"]
+[tool.hatch.build.targets.wheel]
+packages = [
+  "magport",
+  "workflow",
+  "config"
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/magport",
+  "/workflow",
+  "/config"
+]

@@ -13,12 +13,12 @@ rule run_gtdbtk:
         str(BENCHMARKS / "gtdbtk.benchmark.txt")
     params:
         indir=INPUT_DIR,
-        pplacer=lambda w: min(THREADS, 3),
+        pplacer=lambda w: min(THREADS, config.get("max_threads", {}).get("gtdbtk_pplacer", 3)),
         db=GTDBTK_DB,
         suffix=EXT
     log:
         str(LOGS / "gtdbtk.log")
-    threads: THREADS
+    threads: min(THREADS, config.get("max_threads", {}).get("gtdbtk", 32))
     shell:
         r"""
         mkdir -p {GTDB_DIR}
@@ -28,11 +28,11 @@ rule run_gtdbtk:
         # Run GTDB-Tk classify_wf on all genomes
         gtdbtk classify_wf \
             --genome_dir {params.indir} \
-            --skip_ani_screen \
             --out_dir {GTDB_DIR} \
             --cpus {threads} \
             --pplacer_cpus {params.pplacer} \
-            -x {params.suffix} &> {log}
+            -x {params.suffix} &> {log} \
+            --place_species
 
         # if both summary files exist, merge them
         echo "Merging GTDB-Tk summary files..."

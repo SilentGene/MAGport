@@ -1,0 +1,19 @@
+name: magport
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python >=3.11
+  - pip
+  - snakemake >=9.0
+  - pandas >=2.0
+  - jinja2 >=3.1
+  - plotly >=5.15
+  - numpy >=1.24
+  - typer >=0.12
+  - rich >=13.0
+
+# pip entry
+  - pip:
+    - "-e ."
