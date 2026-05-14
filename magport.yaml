@@ -16,4 +16,4 @@ dependencies:
 
 # pip entry
   - pip:
-    - "-e ."
+    - "."

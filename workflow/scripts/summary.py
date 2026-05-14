@@ -24,17 +24,17 @@ class DataLoader:
     def __init__(self, args):
         self.args = args
         # 加载共享文件数据
-        self.checkm_data = self._load_checkm()
-        self.gunc_data = self._load_gunc()
-        self.gtdb_data = self._load_gtdb()
+        self.checkm_data = self._load_checkm() if args.checkm else {}
+        self.gunc_data = self._load_gunc() if args.gunc else {}
+        self.gtdb_data = self._load_gtdb() if args.gtdb else {}
         # 加载每个MAG的文件数据
-        self.seqkit_data = self._load_multiple_files(args.seqkit, self._parse_seqkit, ".seqkit.tsv")
-        self.orfs_data = self._load_multiple_files(args.orfs, self._parse_orfs, ".orfs.tsv")
-        self.park_data = self._load_multiple_files(args.park, self._parse_park, ".park.tsv")
-        self.mimag_data = self._load_multiple_files(args.mimag, self._parse_mimag, ".MIMAG_level.tsv")
-        self.trnas_data = self._load_multiple_files(args.trnas, self._parse_trnas, ".tRNA.tsv")
-        self.rrnas_data = self._load_multiple_files(args.rrnas, self._parse_rrnas, ".rRNA.tsv")
-        self.s16_data = self._load_multiple_files(args._16s, self._parse_16s, ".16S.tsv")
+        self.seqkit_data = self._load_multiple_files(args.seqkit, self._parse_seqkit, ".seqkit.tsv") if args.seqkit else {}
+        self.orfs_data = self._load_multiple_files(args.orfs, self._parse_orfs, ".orfs.tsv") if args.orfs else {}
+        self.park_data = self._load_multiple_files(args.park, self._parse_park, ".park.tsv") if args.park else {}
+        self.mimag_data = self._load_multiple_files(args.mimag, self._parse_mimag, ".MIMAG_level.tsv") if args.mimag else {}
+        self.trnas_data = self._load_multiple_files(args.trnas, self._parse_trnas, ".tRNA.tsv") if args.trnas else {}
+        self.rrnas_data = self._load_multiple_files(args.rrnas, self._parse_rrnas, ".rRNA.tsv") if args.rrnas else {}
+        self.s16_data = self._load_multiple_files(args._16s, self._parse_16s, ".16S.tsv") if args._16s else {}
 
     def _load_checkm(self):
         data = {}
@@ -161,11 +161,11 @@ class DataLoader:
         except Exception:
             return {"16S_NCBI_taxonomy": "", "16S_blastn_identity": ""}
 
-    def get_mag_data(self, mag, seqkit_data):
+    def get_mag_data(self, mag):
         """获取单个MAG的所有数据"""
         
-        data = {}
-        data.update(seqkit_data)
+        data = {"ID": mag}
+        data.update(self.seqkit_data.get(mag, {}))
         data.update(self.orfs_data.get(mag, {}))
         data.update(self.checkm_data.get(mag, {}))
         data.update(self.gunc_data.get(mag, {}))
@@ -197,9 +197,20 @@ def main(args):
     # 初始化数据加载器
     loader = DataLoader(args)
     
+    # 收集所有出现过的 MAG ID
+    all_mag_ids = set()
+    for d in [loader.seqkit_data, loader.orfs_data, loader.park_data, 
+              loader.mimag_data, loader.trnas_data, loader.rrnas_data, loader.s16_data]:
+        all_mag_ids.update(d.keys())
+    
+    # 也要从共享数据中收集（如果有 ID_new 或 user_genome）
+    all_mag_ids.update(loader.checkm_data.keys())
+    all_mag_ids.update(loader.gunc_data.keys())
+    all_mag_ids.update(loader.gtdb_data.keys())
+
     mags = []
-    for mag in sorted(loader.seqkit_data.keys()):
-        mags.append(loader.get_mag_data(mag, loader.seqkit_data[mag]))
+    for mag in sorted(all_mag_ids):
+        mags.append(loader.get_mag_data(mag))
 
     # 输出
     columns = [
@@ -240,24 +251,21 @@ def main(args):
             # 将GTDB_taxonomy改名为动态版本名
             if gtdb_col_name != "GTDB_taxonomy":
                 row[gtdb_col_name] = row.pop("GTDB_taxonomy", "")
-            # 将MAG字段重命名为ID
-            if "MAG" in row:
-                row["ID"] = row.pop("MAG")
             w.writerow(row)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Merge MAG summary tables")
-    parser.add_argument("--seqkit", nargs='+', required=True, help="SeqKit stats TSV files")
-    parser.add_argument("--checkm", required=True, help="CheckM summary TSV file")
-    parser.add_argument("--gunc", required=True, help="GUNC summary TSV file")
-    parser.add_argument("--mimag", nargs='+', required=True, help="MIMAG classification TSV files")
-    parser.add_argument("--park", nargs='+', required=True, help="Park score TSV files")
-    parser.add_argument("--orfs", nargs='+', required=True, help="ORFs count TSV files")
-    parser.add_argument("--trnas", nargs='+', required=True, help="tRNA count TSV files")
-    parser.add_argument("--rrnas", nargs='+', required=True, help="rRNA count TSV files")
-    parser.add_argument("--gtdb", required=True, help="GTDB-tk merged taxonomy TSV file")
-    parser.add_argument("--gtdb-log", required=True, help="GTDB-tk log file")
-    parser.add_argument("--16s", dest="_16s", nargs='+', required=True, help="16S BLAST taxonomy TSV files")
+    parser.add_argument("--seqkit", nargs='+', required=False, help="SeqKit stats TSV files")
+    parser.add_argument("--checkm", required=False, help="CheckM summary TSV file")
+    parser.add_argument("--gunc", required=False, help="GUNC summary TSV file")
+    parser.add_argument("--mimag", nargs='+', required=False, help="MIMAG classification TSV files")
+    parser.add_argument("--park", nargs='+', required=False, help="Park score TSV files")
+    parser.add_argument("--orfs", nargs='+', required=False, help="ORFs count TSV files")
+    parser.add_argument("--trnas", nargs='+', required=False, help="tRNA count TSV files")
+    parser.add_argument("--rrnas", nargs='+', required=False, help="rRNA count TSV files")
+    parser.add_argument("--gtdb", required=False, help="GTDB-tk merged taxonomy TSV file")
+    parser.add_argument("--gtdb-log", required=False, help="GTDB-tk log file")
+    parser.add_argument("--16s", dest="_16s", nargs='+', required=False, help="16S BLAST taxonomy TSV files")
     parser.add_argument("--output", required=True, help="Output summary TSV file")
     parser.add_argument("--results", required=True, help="Results directory")
     args = parser.parse_args()

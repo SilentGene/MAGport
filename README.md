@@ -4,11 +4,6 @@
 
 A Snakemake pipeline for comprehensive characterization of Metagenome-Assembled Genomes (MAGs).
 
-The name "MAGport" has multiple meaningful interpretations:
-   - **Ports** MAGs through various analysis tools for characterization
-   - **Reports** the results in an integrated, interactive format
-   - **Passport**: Creates a comprehensive "passport" for each MAG
-
 
 ## 🔍 Overview
 
@@ -178,6 +173,9 @@ To verify your database configuration without running the pipeline:
 ```bash
 # Do a dry run with verbose output
 magport report -i test/mags -o test/output --snake_args "-n -p"
+
+# Check current configuration
+magport db-check
 ```
 
 ## 📊 Outputs
