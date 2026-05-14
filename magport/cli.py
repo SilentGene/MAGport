@@ -30,6 +30,7 @@ def main(
     modules: str = typer.Option(DEFAULT_MODULES, "--modules", help="Comma-separated modules to run"),
     force_rerun: bool = typer.Option(False, "--force_rerun", "-f", help="Force re-execution"),
     conda_prefix: str = typer.Option(str(Path.home() / ".snakemake" / "conda"), "--conda-prefix", help="Directory to store Conda environments"),
+    rename_pattern: Optional[str] = typer.Option(None, "--rename_pattern", help="Pattern to rename genomes, e.g. MAGs_[phylum5]_[increnum]"),
     snake_args: Optional[str] = typer.Option(None, "--snake_args", help="Extra Snakemake args, e.g. --snake_args '--unlock'"),
 ):
     """Run MAGport Snakemake workflow."""
@@ -37,6 +38,10 @@ def main(
     input_dir = _abs(input_dir)
     output_dir = _abs(output_dir)
     os.makedirs(output_dir, exist_ok=True)
+    
+    # Ensure file_extension starts with a dot
+    if file_extension and not file_extension.startswith("."):
+        file_extension = "." + file_extension
 
     # 1. 读取默认 config.yaml
     default_config_path = Path(__file__).parent.parent / "config" / "config.yaml"
@@ -49,6 +54,8 @@ def main(
     config_data["file_extension"] = file_extension
     config_data["threads"] = threads
     config_data["modules"] = modules
+    if rename_pattern:
+        config_data["rename_pattern"] = rename_pattern
 
     # 3. 写入输出目录下的 config.yaml
     new_config_path = Path(output_dir) / "config.yaml"

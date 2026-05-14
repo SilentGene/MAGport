@@ -61,12 +61,16 @@ class DataLoader:
 
     def _load_gtdb(self):
         data = {}
-        with open(self.args.gtdb) as f:
-            rdr = csv.DictReader(f, delimiter='\t')
-            for row in rdr:
-                genome = row.get("user_genome")
-                if genome:
-                    data[genome] = {"GTDB_taxonomy": row.get("classification", "")}
+        try:
+            with open(self.args.gtdb) as f:
+                rdr = csv.DictReader(f, delimiter='\t')
+                has_new_id = "ID_new" in rdr.fieldnames if rdr.fieldnames else False
+                for row in rdr:
+                    key = row.get("ID_new") if has_new_id and row.get("ID_new") else row.get("user_genome")
+                    if key:
+                        data[key] = {"GTDB_taxonomy": row.get("classification", "")}
+        except Exception:
+            pass
         return data
 
     def _load_multiple_files(self, paths, parser_func, suffix):
@@ -89,7 +93,7 @@ class DataLoader:
                 "genome_size_bp": row[5],
                 "N50": row[13],
                 "GC": row[18],
-                "sum_ambiguous_bases": row[19]
+                "Ambiguous_bases": row[19]
             }
 
     @staticmethod
@@ -103,18 +107,18 @@ class DataLoader:
         try:
             with open(path) as f:
                 next(f)
-                return {"Park_Score": next(f).strip()}
+                return {"Parks_score_reduced": next(f).strip()}
         except Exception:
-            return {"Park_Score": ""}
+            return {"Parks_score_reduced": ""}
 
     @staticmethod
     def _parse_mimag(path):
         try:
             with open(path) as f:
                 next(f)
-                return {"MIMAG_level": next(f).strip()}
+                return {"MIMAG_reduced_level": next(f).strip()}
         except Exception:
-            return {"MIMAG_level": ""}
+            return {"MIMAG_reduced_level": ""}
 
     @staticmethod
     def _parse_trnas(path):
@@ -132,15 +136,15 @@ class DataLoader:
                 next(f)
                 vals = next(csv.reader(f, delimiter='\t'))
                 return {
-                    "num_5S_rRNAs": vals[0] if len(vals) > 0 else "",
-                    "num_16S_rRNAs": vals[1] if len(vals) > 1 else "",
-                    "num_23S_rRNAs": vals[2] if len(vals) > 2 else ""
+                    "5S": vals[0] if len(vals) > 0 else "",
+                    "16S": vals[1] if len(vals) > 1 else "",
+                    "23S": vals[2] if len(vals) > 2 else ""
                 }
         except Exception:
             return {
-                "num_5S_rRNAs": "",
-                "num_16S_rRNAs": "",
-                "num_23S_rRNAs": ""
+                "5S": "",
+                "16S": "",
+                "23S": ""
             }
 
     @staticmethod
@@ -174,20 +178,34 @@ class DataLoader:
         return data
 
 def main(args):
+    # 解析 GTDB_VERSION
+    gtdb_version = ""
+    try:
+        with open(args.gtdb_log, 'r') as f:
+            for line in f:
+                if "Using GTDB-Tk reference data version " in line:
+                    import re
+                    match = re.search(r'version r([^:]+):?', line)
+                    if match:
+                        gtdb_version = match.group(1)
+                    break
+    except Exception:
+        pass
+    
+    gtdb_col_name = f"Taxonomy_GTDB_R{gtdb_version}" if gtdb_version else "GTDB_taxonomy"
+
     # 初始化数据加载器
     loader = DataLoader(args)
     
     mags = []
-    with open(args.mags) as f:
-        for line in f:
-            mag = line.strip().split('\t')[0]
-            mags.append(loader.get_mag_data(mag, loader.seqkit_data.get(mag, {"MAG": mag})))
+    for mag in sorted(loader.seqkit_data.keys()):
+        mags.append(loader.get_mag_data(mag, loader.seqkit_data[mag]))
 
     # 输出
     columns = [
-        "ID", "num_contigs", "genome_size_bp", "N50", "GC", "sum_ambiguous_bases",
-        "num_ORFs", "Completeness", "Contamination", "pass_GUNC", "Park_Score", "MIMAG_level",
-        "num_tRNAs", "num_16S_rRNAs", "num_23S_rRNAs", "num_5S_rRNAs", "16S_NCBI_taxonomy", "16S_blastn_identity", "GTDB_taxonomy", "GTDB_novelty"
+        "ID", "num_contigs", "genome_size_bp", "N50", "GC", "Ambiguous_bases",
+        "num_ORFs", "Completeness", "Contamination", "pass_GUNC", "Parks_score_reduced", "MIMAG_reduced_level",
+        "num_tRNAs", "16S", "23S", "5S", "16S_NCBI_taxonomy", "16S_blastn_identity", gtdb_col_name, "GTDB_novelty"
     ]
     
     def get_gtdb_novelty(taxonomy):
@@ -219,6 +237,9 @@ def main(args):
         for row in mags:
             taxonomy = row.get("GTDB_taxonomy", "")
             row["GTDB_novelty"] = get_gtdb_novelty(taxonomy)
+            # 将GTDB_taxonomy改名为动态版本名
+            if gtdb_col_name != "GTDB_taxonomy":
+                row[gtdb_col_name] = row.pop("GTDB_taxonomy", "")
             # 将MAG字段重命名为ID
             if "MAG" in row:
                 row["ID"] = row.pop("MAG")
@@ -226,7 +247,6 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Merge MAG summary tables")
-    parser.add_argument("--mags", required=True, help="input_MAGs.txt file")
     parser.add_argument("--seqkit", nargs='+', required=True, help="SeqKit stats TSV files")
     parser.add_argument("--checkm", required=True, help="CheckM summary TSV file")
     parser.add_argument("--gunc", required=True, help="GUNC summary TSV file")
@@ -236,6 +256,7 @@ if __name__ == "__main__":
     parser.add_argument("--trnas", nargs='+', required=True, help="tRNA count TSV files")
     parser.add_argument("--rrnas", nargs='+', required=True, help="rRNA count TSV files")
     parser.add_argument("--gtdb", required=True, help="GTDB-tk merged taxonomy TSV file")
+    parser.add_argument("--gtdb-log", required=True, help="GTDB-tk log file")
     parser.add_argument("--16s", dest="_16s", nargs='+', required=True, help="16S BLAST taxonomy TSV files")
     parser.add_argument("--output", required=True, help="Output summary TSV file")
     parser.add_argument("--results", required=True, help="Results directory")

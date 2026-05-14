@@ -1,5 +1,5 @@
 name: magport-barrnap
 dependencies:
   - conda-forge::python=3.10
-  - bioconda::barrnap
+  - bioconda::barrnap=0.9
   - bioconda::bedtools

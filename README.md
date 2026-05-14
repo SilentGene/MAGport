@@ -53,6 +53,21 @@ Start with a dry run to test:
 magport report -i <mags_dir> -o <results_dir> --threads 4 --snake_args "-n"
 ```
 
+### Dynamic MAG Renaming
+
+I’m sure you’ve been frustrated by how messy MAG names can get. Now, you can use the `--rename_pattern` option to give your MAGs clean, consistent names. When specified, MAGport will dynamically rename the genomes after the GTDB-Tk classification step, and all downstream analysis will be performed on the newly named genomes.
+
+The pattern string must contain the `[increnum]` placeholder for an incremental index, and can optionally include taxonomic level placeholders like `[taxonomy_levelX]`, where `taxonomy_level` can be `domain`, `phylum`, `class`, `order`, `family`, `genus`, or `species`, and `X` is an optional number specifying the maximum number of characters to extract.
+
+For example, using `--rename_pattern "MAGs_[phylum5]_[increnum]"`:
+- A MAG classified under the phylum *Halobacteriota* would be renamed to something like `MAGs_Halob_1`.
+- If the phylum classification is missing, it will use a placeholder like `novP`.
+- If a MAG is classified as "Unclassified Bacteria" or "Unclassified Archaea", the taxonomic placeholders will be replaced with `UncBac` or `UncArc` respectively.
+
+```bash
+magport report --input_dir <mags_dir> --output_dir <results_dir> --rename_pattern "MyProject_[phylum5]_[increnum]"
+```
+
 ## 📦 Modules
 
 Select specific modules with `--modules` (comma-separated):

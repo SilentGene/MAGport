@@ -13,7 +13,7 @@ rule mimag_classify:
     shell:
         r"""
         mkdir -p {MIMAG_DIR}
-        python workflow/scripts/mimag.py \
+        python {workflow.basedir}/scripts/mimag.py \
             {input.checkm2} \
             {input.trna} \
             {input.rrna} \

@@ -5,7 +5,7 @@ STATS_DIR = get_dir("seqkit", "01_stats/seqkit")
 rule stats_seqkit:
     conda: ENV["seqkit"]
     input:
-        mag=lambda wc: SAMPLES[wc.sample]
+        mag=get_genome_path
     output:
         tsv=str(STATS_DIR / "{sample}.seqkit.tsv")
     threads: 1

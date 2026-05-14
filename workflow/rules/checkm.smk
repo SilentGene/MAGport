@@ -7,7 +7,7 @@ ORF_DIR = get_dir("orfs", "02_genes/orfs")
 rule run_checkm2:
     conda: ENV["checkm2"]
     input:
-        orfs=expand(str(ORF_DIR / "{sample}.faa"), sample=SAMPLE_LIST)
+        orfs=lambda wc: expand(str(ORF_DIR / "{sample}.faa"), sample=get_active_samples(wc))
     output:
         summary=QUALITY_DIR / "checkm2_summary.tsv"
     benchmark:

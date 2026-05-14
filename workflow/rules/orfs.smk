@@ -5,7 +5,7 @@ ORF_DIR = get_dir("orfs", "02_genes/orfs")
 rule orfs_prodigal:
     conda: ENV["prodigal"]
     input:
-        mag=lambda wc: SAMPLES[wc.sample]
+        mag=get_genome_path
     output:
         faa=str(ORF_DIR / "{sample}.faa"),
         gff=str(ORF_DIR / "{sample}.gff"),

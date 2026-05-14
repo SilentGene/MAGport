@@ -3,7 +3,8 @@
 rule report_html:
     conda: ENV["python"]
     input:
-        SUMMARY_TSV
+        summary=SUMMARY_TSV,
+        template=f"{workflow.basedir}/scripts/report_template.html"
     output:
         REPORT_HTML
     benchmark:
@@ -13,5 +14,10 @@ rule report_html:
         input_dir=str(INPUT_DIR)
     shell:
         r"""
-        python workflow/scripts/report.py {input} {output} "{params.title}" "{params.input_dir}"
+        python {workflow.basedir}/scripts/report.py \
+            --summary {input.summary} \
+            --template {input.template} \
+            --output {output} \
+            --title "{params.title}" \
+            --input-dir "{params.input_dir}"
         """

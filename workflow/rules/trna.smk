@@ -5,7 +5,7 @@ TRNA_DIR = get_dir("trna", "02_genes/trna")
 rule trna_scan:
     conda: ENV["trnascan"]
     input:
-        mag=lambda wc: SAMPLES[wc.sample],
+        mag=get_genome_path,
         gtdb=GTDB_DIR / "gtdb.merged_summary.tsv"
     output:
         tsv=str(TRNA_DIR / "{sample}.tRNA.tsv")

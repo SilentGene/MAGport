@@ -68,7 +68,7 @@ def main(stats_tsv: Path, quality_tsv: Path, out_tsv: Path, mag_name: str) -> No
     out_tsv.parent.mkdir(parents=True, exist_ok=True)
     with open(out_tsv, 'w', newline='') as f:
         w = csv.writer(f, delimiter='\t')
-        w.writerow(["park_score"])
+        w.writerow(["Parks_score_reduced"])
         w.writerow([f"{score:.3f}"])
 
 if __name__ == "__main__":

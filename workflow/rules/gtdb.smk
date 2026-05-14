@@ -6,13 +6,13 @@ GTDB_DIR = get_dir("gtdbtk", "04_taxonomy/gtdbtk")
 rule run_gtdbtk:
     conda: ENV["gtdbtk"]
     input:
-        mag=MAGS
+        mag=expand(str(OUTPUT_DIR / "00_input_genomes" / "{sample}{ext}"), sample=SAMPLE_LIST, ext=EXT)
     output:
         summary=GTDB_DIR / "gtdb.merged_summary.tsv"
     benchmark:
         str(BENCHMARKS / "gtdbtk.benchmark.txt")
     params:
-        indir=INPUT_DIR,
+        indir=OUTPUT_DIR / "00_input_genomes",
         pplacer=lambda w: min(THREADS, config.get("max_threads", {}).get("gtdbtk_pplacer", 3)),
         db=GTDBTK_DB,
         suffix=EXT
@@ -31,8 +31,7 @@ rule run_gtdbtk:
             --out_dir {GTDB_DIR} \
             --cpus {threads} \
             --pplacer_cpus {params.pplacer} \
-            -x {params.suffix} &> {log} \
-            --place_species
+            -x {params.suffix} --place_species &> {log}
 
         # if both summary files exist, merge them
         echo "Merging GTDB-Tk summary files..."

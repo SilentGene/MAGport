@@ -7,7 +7,7 @@ from pathlib import Path
 # Usage: python mimag.py quality.tsv trna.tsv rrna.tsv out.tsv --mag MAG1
 
 """MIMAG classification
-HQ: Completeness > 90, Contamination < 5, tRNA >= 18, rRNA has 5S,16S,23S
+HQ: Completeness > 90, Contamination < 5
 MQ: Completeness >= 50, Contamination < 10
 LQ: else
 """
@@ -45,14 +45,14 @@ def main(quality_tsv: Path, trna_tsv: Path, rrna_tsv: Path, out_tsv: Path, mag_n
         except Exception:
             pass
     quality = "LQ"
-    if comp > 90 and cont < 5 and trna_count >= 18 and has_5s and has_16s and has_23s:
+    if comp > 90 and cont < 5:
         quality = "HQ"
     elif comp >= 50 and cont < 10:
         quality = "MQ"
     out_tsv.parent.mkdir(parents=True, exist_ok=True)
     with open(out_tsv, 'w', newline='') as f:
         w = csv.writer(f, delimiter='\t')
-        w.writerow(["MIMAG"])
+        w.writerow(["MIMAG_reduced_level"])
         w.writerow([quality])
     print(f"MIMAG for {mag_name}: {quality} (comp={comp}, cont={cont}, tRNA={trna_count}, 5S={has_5s},16S={has_16s},23S={has_23s})")
 
@@ -64,5 +64,7 @@ if __name__ == "__main__":
     parser.add_argument("rrna_tsv", type=Path, help="rRNA results TSV file")
     parser.add_argument("out_tsv", type=Path, help="Output TSV file")
     parser.add_argument("--mag", required=True, help="MAG name to process")
+
+    args = parser.parse_args()
     
     main(args.quality_tsv, args.trna_tsv, args.rrna_tsv, args.out_tsv, args.mag)

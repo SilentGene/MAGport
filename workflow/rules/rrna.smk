@@ -5,12 +5,13 @@ RRNA_DIR = get_dir("rrna", "02_genes/rrna")
 rule rrna_barrnap:
     conda: ENV["barrnap"]
     input:
-        mag=lambda wc: SAMPLES[wc.sample],
+        mag=get_genome_path,
         gtdb=GTDB_DIR / "gtdb.merged_summary.tsv"
     output:
         gff=str(RRNA_DIR / "{sample}.rRNA.gff"),
         rna_fasta=str(RRNA_DIR / "{sample}.rRNA.fna"),
-        tsv=str(RRNA_DIR / "{sample}.rRNA.tsv")
+        tsv=str(RRNA_DIR / "{sample}.rRNA.tsv"),
+        fai=temp(lambda wc: str(get_genome_path(wc)) + ".fai")
     log:
         str(LOGS / "barrnap.{sample}.log")
     threads: 1
@@ -22,9 +23,9 @@ rule rrna_barrnap:
         echo "Domain for {wildcards.sample}: $domain"
         # Run barrnap for rRNA prediction
         if echo "$domain" | grep -qi "Archaea"; then
-            barrnap --quiet --threads {threads} --kingdom arc --outseq {output.rna_fasta} {input.mag} > {output.gff} 2> {log}
+            barrnap --threads {threads} --kingdom arc --outseq {output.rna_fasta} {input.mag} > {output.gff} 2> {log}
         else
-            barrnap --quiet --threads {threads} --kingdom bac --outseq {output.rna_fasta} {input.mag} > {output.gff} 2> {log}
+            barrnap --threads {threads} --kingdom bac --outseq {output.rna_fasta} {input.mag} > {output.gff} 2> {log}
         fi
 
         # Count rRNAs by type

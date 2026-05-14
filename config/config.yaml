@@ -17,7 +17,7 @@ directories:
   trna: 02_genes/trna
   checkm: 03_quality/checkm
   gunc: 03_quality/gunc
-  park: 03_quality/park
+  park: 03_quality/parks_score
   mimag: 03_quality/mimag
   gtdbtk: 04_taxonomy/gtdbtk
   r16s: 04_taxonomy/16S
