@@ -30,7 +30,7 @@ class DataLoader:
         # 加载每个MAG的文件数据
         self.seqkit_data = self._load_multiple_files(args.seqkit, self._parse_seqkit, ".seqkit.tsv") if args.seqkit else {}
         self.orfs_data = self._load_multiple_files(args.orfs, self._parse_orfs, ".orfs.tsv") if args.orfs else {}
-        self.park_data = self._load_multiple_files(args.park, self._parse_park, ".park.tsv") if args.park else {}
+        self.park_data = self._load_multiple_files(args.park, self._parse_park, ".parks.tsv") if args.park else {}
         self.mimag_data = self._load_multiple_files(args.mimag, self._parse_mimag, ".MIMAG_level.tsv") if args.mimag else {}
         self.trnas_data = self._load_multiple_files(args.trnas, self._parse_trnas, ".tRNA.tsv") if args.trnas else {}
         self.rrnas_data = self._load_multiple_files(args.rrnas, self._parse_rrnas, ".rRNA.tsv") if args.rrnas else {}
@@ -88,7 +88,6 @@ class DataLoader:
             next(reader)  # Skip header
             row = next(reader)  # Read data row
             return {
-                "MAG": row[0],
                 "num_contigs": row[4],
                 "genome_size_bp": row[5],
                 "N50": row[13],
@@ -243,7 +242,7 @@ def main(args):
             return "NA"
 
     with open(args.output, 'w', newline='') as f:
-        w = csv.DictWriter(f, fieldnames=columns, delimiter='\t')
+        w = csv.DictWriter(f, fieldnames=columns, delimiter='\t', extrasaction='ignore')
         w.writeheader()
         for row in mags:
             taxonomy = row.get("GTDB_taxonomy", "")

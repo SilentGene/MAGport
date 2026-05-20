@@ -10,13 +10,15 @@ rule rrna_barrnap:
     output:
         gff=str(RRNA_DIR / "{sample}.rRNA.gff"),
         rna_fasta=str(RRNA_DIR / "{sample}.rRNA.fna"),
-        tsv=str(RRNA_DIR / "{sample}.rRNA.tsv"),
-        fai=temp(lambda wc: str(get_genome_path(wc)) + ".fai")
+        tsv=str(RRNA_DIR / "{sample}.rRNA.tsv")
     log:
         str(LOGS / "barrnap.{sample}.log")
     threads: 1
     shell:
         r"""
+        # Clean up the .fai file upon exit (barrnap/samtools creates it next to the input MAG)
+        trap 'rm -f "{input.mag}.fai"' EXIT
+
         mkdir -p {RRNA_DIR}
         # Determine kingdom from GTDB lineage (default to bacteria if not found)
         domain=$(awk -v mag="{wildcards.sample}" 'BEGIN{{FS="\t"}} $1==mag {{print $2}}' {input.gtdb})
