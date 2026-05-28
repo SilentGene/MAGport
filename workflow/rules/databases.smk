@@ -32,10 +32,10 @@ def verify_all_databases():
         enabled_modules = set(MODULES)
         
         # 根据启用的模块验证相应的数据库
-        if "gtdb" in enabled_modules:
+        if "gtdb" in enabled_modules and not config.get("input_taxonomy"):
             check_db_path(GTDBTK_DB, "GTDBTK")
         
-        if "quality" in enabled_modules:
+        if "quality" in enabled_modules and not config.get("input_quality"):
             check_db_path(CHECKM2_DB, "CHECKM2")
         
         if "gunc" in enabled_modules:
@@ -46,5 +46,4 @@ def verify_all_databases():
     except NameError as e:
         print(f"[MAGport] Warning: Could not verify databases - {e}")
         print("[MAGport] This is normal if you're just viewing the DAG or doing a dry run.")
-
 

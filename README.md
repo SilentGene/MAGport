@@ -35,6 +35,30 @@ conda activate magport
 
 ### Basic Usage
 
+```PowerShell
+$ magport report --help
+
+ Usage: magport report [OPTIONS]
+
+ Run MAGport Snakemake workflow.
+
+╭─ Options ──────────────
+│ *  --input_dir       -i      TEXT     Directory with MAG FASTA files [required]
+│ *  --output_dir      -o      TEXT     Output directory [required]
+│    --file_extension  -e      TEXT     FASTA extension (e.g. .fa,.fna,.fasta) [default: .fasta]
+│    --threads         -t      INTEGER  Max threads [default: 8]
+│    --modules                 TEXT     Comma-separated modules to run [default: stats,quality,park,gunc,rrna,trna,orfs,gtdb,rrna16S,mimag]
+│    --force_rerun     -f               Force re-execution
+│    --conda-prefix            TEXT     Directory to store Conda environments [default: /home/lin92/.snakemake/conda]
+│    --rename_pattern          TEXT     Pattern to rename genomes, e.g. MyProject_[phylum5]_[increnum]
+│    --input_taxonomy          TEXT     Existing GTDB taxonomy TSV to use instead of running GTDB-Tk
+│    --gtdb_version            TEXT     GTDB release/version for --input_taxonomy, e.g. R232
+│    --input_quality           TEXT     Existing CheckM2 quality TSV to use instead of running CheckM2
+│    --snake_args              TEXT     Extra Snakemake args, e.g. --snake_args '--unlock'
+│    --help                             Show this message and exit.
+╰────────────────────────
+```
+
 Run the pipeline:
 ```bash
 magport report --input_dir <mags_dir> \
@@ -54,14 +78,45 @@ I’m sure you’ve been frustrated by how messy MAG names can get. Now, you can
 
 The pattern string must contain the `[increnum]` placeholder for an incremental index, and can optionally include taxonomic level placeholders like `[taxonomy_levelX]`, where `taxonomy_level` can be `domain`, `phylum`, `class`, `order`, `family`, `genus`, or `species`, and `X` is an optional number specifying the maximum number of characters to extract.
 
-For example, using `--rename_pattern "MAGs_[phylum5]_[increnum]"`:
-- A MAG classified under the phylum *Halobacteriota* would be renamed to something like `MAGs_Halob_1`.
+For example, using `--rename_pattern "soil5cm_[phylum5]_[increnum]"`:
+- A MAG classified under the phylum *Halobacteriota* would be renamed to something like `soil5cm_Halob_1`.
 - If the phylum classification is missing, it will use a placeholder like `novP`.
 - If a MAG is classified as "Unclassified Bacteria" or "Unclassified Archaea", the taxonomic placeholders will be replaced with `UncBac` or `UncArc` respectively.
 
 ```bash
 magport report --input_dir <mags_dir> --output_dir <results_dir> --rename_pattern "MyProject_[phylum5]_[increnum]"
 ```
+
+### Providing Existing GTDB Taxonomy and CheckM2 Quality Information
+
+If you already have GTDB taxonomy classifications or CheckM2 quality assessments for your MAGs, you can skip those steps in the pipeline and provide the existing data directly. This can save time and computational resources.
+To use existing GTDB taxonomy classifications, prepare a TSV file with the following format:
+
+```genome    taxonomy
+MAG_001       d__Bacteria; p__Proteobacteria; c__Gammaproteobacteria; o__Enterobacterales; f__Enterobacteriaceae; g__Escherichia; s__Escherichia coli
+MAG_002       d__Bacteria; p__Firmicutes; c__Clostridia; o__Clostridiales; f__Clostridiaceae; g__Clostridium; s__Clostridium difficile
+```
+
+Then, run the pipeline with the `--input_taxonomy` option:
+
+```bash
+magport report --input_dir <mags_dir> --output_dir <results_dir> --input_taxonomy existing_taxonomy.tsv --gtdb_version R232
+```
+To use existing CheckM2 quality assessments, prepare a TSV file with the following format:
+
+```genome    completeness    contamination   Coding_Density
+MAG_001       95.0           2.0             35.0
+MAG_002       85.0           5.0             30.0
+```
+The Coding_Density column is optional but can be included if you want to provide that information as well. If it's not included, MAGport will simply skip that part of the quality assessment.
+
+Then, run the pipeline with the `--input_quality` option:
+
+```bash
+magport report --input_dir <mags_dir> --output_dir <results_dir> --input_quality existing_quality.tsv
+```
+
+
 
 ## 📦 Modules
 

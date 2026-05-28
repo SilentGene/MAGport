@@ -3,48 +3,65 @@
 GTDB_DIR = get_dir("gtdbtk", "04_taxonomy/gtdbtk")
 
 
-rule run_gtdbtk:
-    conda: ENV["gtdbtk"]
-    input:
-        mag=expand(str(OUTPUT_DIR / "00_input_genomes" / "{sample}{ext}"), sample=SAMPLE_LIST, ext=EXT)
-    output:
-        summary=GTDB_DIR / "gtdb.merged_summary.tsv"
-    benchmark:
-        str(BENCHMARKS / "gtdbtk.benchmark.txt")
-    params:
-        indir=OUTPUT_DIR / "00_input_genomes",
-        pplacer=lambda w: min(THREADS, config.get("max_threads", {}).get("gtdbtk_pplacer", 3)),
-        db=GTDBTK_DB,
-        suffix=EXT
-    log:
-        str(LOGS / "gtdbtk.log")
-    threads: min(THREADS, config.get("max_threads", {}).get("gtdbtk", 32))
-    shell:
-        r"""
-        mkdir -p {GTDB_DIR}
-        # Set GTDBTK_DATA_PATH environment variable
-        export GTDBTK_DATA_PATH={params.db}
-        
-        # Run GTDB-Tk classify_wf on all genomes
-        gtdbtk classify_wf \
-            --genome_dir {params.indir} \
-            --out_dir {GTDB_DIR} \
-            --cpus {threads} \
-            --pplacer_cpus {params.pplacer} \
-            -x {params.suffix} --place_species &> {log}
+if INPUT_TAXONOMY:
+    rule import_gtdb_taxonomy:
+        conda: ENV["python"]
+        input:
+            taxonomy=INPUT_TAXONOMY
+        output:
+            summary=GTDB_DIR / "gtdb.merged_summary.tsv"
+        benchmark:
+            str(BENCHMARKS / "gtdbtk.benchmark.txt")
+        shell:
+            r"""
+            python {workflow.basedir}/scripts/import_external_results.py \
+                --kind taxonomy \
+                --input {input.taxonomy} \
+                --output {output.summary}
+            """
+else:
+    rule run_gtdbtk:
+        conda: ENV["gtdbtk"]
+        input:
+            mag=expand(str(OUTPUT_DIR / "00_input_genomes" / "{sample}{ext}"), sample=SAMPLE_LIST, ext=EXT)
+        output:
+            summary=GTDB_DIR / "gtdb.merged_summary.tsv"
+        benchmark:
+            str(BENCHMARKS / "gtdbtk.benchmark.txt")
+        params:
+            indir=OUTPUT_DIR / "00_input_genomes",
+            pplacer=lambda w: min(THREADS, config.get("max_threads", {}).get("gtdbtk_pplacer", 3)),
+            db=GTDBTK_DB,
+            suffix=EXT
+        log:
+            str(LOGS / "gtdbtk.log")
+        threads: min(THREADS, config.get("max_threads", {}).get("gtdbtk", 32))
+        shell:
+            r"""
+            mkdir -p {GTDB_DIR}
+            # Set GTDBTK_DATA_PATH environment variable
+            export GTDBTK_DATA_PATH={params.db}
+            
+            # Run GTDB-Tk classify_wf on all genomes
+            gtdbtk classify_wf \
+                --genome_dir {params.indir} \
+                --out_dir {GTDB_DIR} \
+                --cpus {threads} \
+                --pplacer_cpus {params.pplacer} \
+                -x {params.suffix} --place_species &> {log}
 
-        # if both summary files exist, merge them
-        echo "Merging GTDB-Tk summary files..."
-        if [ -s {GTDB_DIR}/gtdbtk.ar53.summary.tsv ] && [ -s {GTDB_DIR}/gtdbtk.bac120.summary.tsv ]; then
-            awk 'FNR==1 && NR>1 {{next}} NF>0' {GTDB_DIR}/gtdbtk.ar53.summary.tsv {GTDB_DIR}/gtdbtk.bac120.summary.tsv > {output.summary}
-        elif [ -s {GTDB_DIR}/gtdbtk.ar53.summary.tsv ]; then
-            mv {GTDB_DIR}/gtdbtk.ar53.summary.tsv {output.summary}
-        elif [ -s {GTDB_DIR}/gtdbtk.bac120.summary.tsv ]; then
-            mv {GTDB_DIR}/gtdbtk.bac120.summary.tsv {output.summary}
-        else
-            touch {output.summary}
-        fi
-        """
+            # if both summary files exist, merge them
+            echo "Merging GTDB-Tk summary files..."
+            if [ -s {GTDB_DIR}/gtdbtk.ar53.summary.tsv ] && [ -s {GTDB_DIR}/gtdbtk.bac120.summary.tsv ]; then
+                awk 'FNR==1 && NR>1 {{next}} NF>0' {GTDB_DIR}/gtdbtk.ar53.summary.tsv {GTDB_DIR}/gtdbtk.bac120.summary.tsv > {output.summary}
+            elif [ -s {GTDB_DIR}/gtdbtk.ar53.summary.tsv ]; then
+                mv {GTDB_DIR}/gtdbtk.ar53.summary.tsv {output.summary}
+            elif [ -s {GTDB_DIR}/gtdbtk.bac120.summary.tsv ]; then
+                mv {GTDB_DIR}/gtdbtk.bac120.summary.tsv {output.summary}
+            else
+                touch {output.summary}
+            fi
+            """
 
 """GTDB-Tk merged summary sample
 user_genome	classification	closest_genome_reference	closest_genome_reference_radius	closest_genome_taxonomy	closest_genome_ani	closest_genome_af	closest_placement_reference	closest_placement_radius	closest_placement_taxonomy	closest_placement_ani	closest_placement_af	pplacer_taxonomy	classification_method	note	other_related_references(genome_id,species_name,radius,ANI,AF)	msa_percent	translation_table	red_value	warnings

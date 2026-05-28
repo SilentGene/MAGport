@@ -31,12 +31,23 @@ def main(
     force_rerun: bool = typer.Option(False, "--force_rerun", "-f", help="Force re-execution"),
     conda_prefix: str = typer.Option(str(Path.home() / ".snakemake" / "conda"), "--conda-prefix", help="Directory to store Conda environments"),
     rename_pattern: Optional[str] = typer.Option(None, "--rename_pattern", help="Pattern to rename genomes, e.g. MAGs_[phylum5]_[increnum]"),
+    input_taxonomy: Optional[str] = typer.Option(None, "--input_taxonomy", help="Existing GTDB taxonomy TSV to use instead of running GTDB-Tk"),
+    gtdb_version: Optional[str] = typer.Option(None, "--gtdb_version", help="GTDB release/version for --input_taxonomy, e.g. R232"),
+    input_quality: Optional[str] = typer.Option(None, "--input_quality", help="Existing CheckM2 quality TSV to use instead of running CheckM2"),
     snake_args: Optional[str] = typer.Option(None, "--snake_args", help="Extra Snakemake args, e.g. --snake_args '--unlock'"),
 ):
     """Run MAGport Snakemake workflow."""
 
+    if bool(input_taxonomy) != bool(gtdb_version):
+        console.print("[red]--input_taxonomy and --gtdb_version must be provided together.[/red]")
+        raise typer.Exit(1)
+
     input_dir = _abs(input_dir)
     output_dir = _abs(output_dir)
+    if input_taxonomy:
+        input_taxonomy = _abs(input_taxonomy)
+    if input_quality:
+        input_quality = _abs(input_quality)
     os.makedirs(output_dir, exist_ok=True)
     
     # Ensure file_extension starts with a dot
@@ -56,6 +67,11 @@ def main(
     config_data["modules"] = modules
     if rename_pattern:
         config_data["rename_pattern"] = rename_pattern
+    if input_taxonomy:
+        config_data["input_taxonomy"] = input_taxonomy
+        config_data["gtdb_version"] = gtdb_version
+    if input_quality:
+        config_data["input_quality"] = input_quality
 
     # 3. 写入输出目录下的 config.yaml
     new_config_path = Path(output_dir) / "config.yaml"

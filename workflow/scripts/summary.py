@@ -45,7 +45,8 @@ class DataLoader:
                 if key:
                     data[key] = {
                         "Completeness": row.get("Completeness", ""),
-                        "Contamination": row.get("Contamination", "")
+                        "Contamination": row.get("Contamination", ""),
+                        "coding_density": row.get("Coding_Density", "")
                     }
         return data
 
@@ -178,18 +179,21 @@ class DataLoader:
 
 def main(args):
     # 解析 GTDB_VERSION
-    gtdb_version = ""
-    try:
-        with open(args.gtdb_log, 'r') as f:
-            for line in f:
-                if "Using GTDB-Tk reference data version " in line:
-                    import re
-                    match = re.search(r'version r([^:]+):?', line)
-                    if match:
-                        gtdb_version = match.group(1)
-                    break
-    except Exception:
-        pass
+    gtdb_version = args.gtdb_version or ""
+    if gtdb_version:
+        gtdb_version = gtdb_version.removeprefix("R").removeprefix("r")
+    else:
+        try:
+            with open(args.gtdb_log, 'r') as f:
+                for line in f:
+                    if "Using GTDB-Tk reference data version " in line:
+                        import re
+                        match = re.search(r'version r([^:]+):?', line)
+                        if match:
+                            gtdb_version = match.group(1)
+                        break
+        except Exception:
+            pass
     
     gtdb_col_name = f"Taxonomy_GTDB_R{gtdb_version}" if gtdb_version else "GTDB_taxonomy"
 
@@ -214,7 +218,7 @@ def main(args):
     # 输出
     columns = [
         "ID", "num_contigs", "genome_size_bp", "N50", "GC", "Ambiguous_bases",
-        "num_ORFs", "Completeness", "Contamination", "pass_GUNC", "Parks_score_reduced", "MIMAG_reduced_level",
+        "num_ORFs", "Completeness", "Contamination", "coding_density", "pass_GUNC", "Parks_score_reduced", "MIMAG_reduced_level",
         "num_tRNAs", "16S", "23S", "5S", "16S_NCBI_taxonomy", "16S_blastn_identity", gtdb_col_name, "GTDB_novelty"
     ]
     
@@ -264,6 +268,7 @@ if __name__ == "__main__":
     parser.add_argument("--rrnas", nargs='+', required=False, help="rRNA count TSV files")
     parser.add_argument("--gtdb", required=False, help="GTDB-tk merged taxonomy TSV file")
     parser.add_argument("--gtdb-log", required=False, help="GTDB-tk log file")
+    parser.add_argument("--gtdb-version", required=False, help="GTDB release/version, e.g. R232")
     parser.add_argument("--16s", dest="_16s", nargs='+', required=False, help="16S BLAST taxonomy TSV files")
     parser.add_argument("--output", required=True, help="Output summary TSV file")
     parser.add_argument("--results", required=True, help="Results directory")

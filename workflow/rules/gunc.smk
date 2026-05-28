@@ -6,13 +6,13 @@ ORF_DIR = get_dir("orfs", "02_genes/orfs")
 rule gunc_run_all:
     conda: ENV["gunc"]
     input:
-        orfs=lambda wc: expand(str(ORF_DIR / "{sample}.faa"), sample=get_active_samples(wc))
+        orfs=lambda wc: expand(str(ORF_DIR / "faa" / "{sample}.faa"), sample=get_active_samples(wc))
     output:
         summary=GUNC_DIR / "GUNC_summary.tsv"
     benchmark:
         str(BENCHMARKS / "gunc.benchmark.txt")
     params:
-        indir=ORF_DIR,
+        indir=ORF_DIR / "faa",
         db=str(GUNC_DB / "gunc_db_gtdb95.dmnd")
     log:
         str(LOGS / "gunc.log")

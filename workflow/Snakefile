@@ -14,6 +14,9 @@ if EXT and not EXT.startswith("."):
     EXT = "." + EXT
 THREADS = int(config.get("threads", 8))
 MODULES = set((config.get("modules", "stats,quality,park,gunc,rrna,trna,orfs,gtdb,rrna16S,mimag").split(',')))
+INPUT_TAXONOMY = config.get("input_taxonomy")
+INPUT_QUALITY = config.get("input_quality")
+GTDB_VERSION = config.get("gtdb_version", "")
 
 # Database download paths (for magport download command)
 DB_BASE = Path(config.get("db_base", OUTPUT_DIR / "databases"))
@@ -114,7 +117,10 @@ def per_mag_outputs(module: str):
     elif module == "trna":
         outs = [get_dir("trna", "02_genes/trna")/(s+".tRNA.tsv") for s in SAMPLE_LIST]
     elif module == "orfs":
-        outs = [get_dir("orfs", "02_genes/orfs")/(s+".orfs.tsv") for s in SAMPLE_LIST]
+        outs = (
+            [get_dir("orfs", "02_genes/orfs") / "orf_count" / (s + ".orfs.tsv") for s in SAMPLE_LIST] +
+            [OUTPUT_DIR / "02_genes" / "gene_info.tsv"]
+        )
     elif module == "gtdb":
         outs = [get_dir("gtdbtk", "04_taxonomy/gtdbtk")/"gtdb.merged_summary.tsv"]
     elif module == "rrna16S":
@@ -197,7 +203,10 @@ def get_dynamic_targets(wildcards):
         elif m == "trna":
             outs = [get_dir("trna", "02_genes/trna")/(s+".tRNA.tsv") for s in active_samples]
         elif m == "orfs":
-            outs = [get_dir("orfs", "02_genes/orfs")/(s+".orfs.tsv") for s in active_samples]
+            outs = (
+                [get_dir("orfs", "02_genes/orfs") / "orf_count" / (s + ".orfs.tsv") for s in active_samples] +
+                [OUTPUT_DIR / "02_genes" / "gene_info.tsv"]
+            )
         elif m == "rrna16S":
             outs = [get_dir("r16s", "04_taxonomy/16S")/(s+".16S.tsv") for s in active_samples]
         elif m == "mimag":

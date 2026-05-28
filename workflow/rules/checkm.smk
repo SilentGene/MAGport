@@ -4,30 +4,47 @@ QUALITY_DIR = get_dir("checkm", "03_quality/checkm")
 ORF_DIR = get_dir("orfs", "02_genes/orfs")
 
 
-rule run_checkm2:
-    conda: ENV["checkm2"]
-    input:
-        orfs=lambda wc: expand(str(ORF_DIR / "{sample}.faa"), sample=get_active_samples(wc))
-    output:
-        summary=QUALITY_DIR / "checkm2_summary.tsv"
-    benchmark:
-        str(BENCHMARKS / "checkm2.benchmark.txt")
-    params:
-        indir=ORF_DIR,
-        db=str(CHECKM2_DB / "uniref100.KO.1.dmnd"),
-    log:
-        str(LOGS / "checkm2.log")
-    threads: min(config.get("max_threads", {}).get("checkm2", 8), THREADS)
-    shell:
-        r"""
-        mkdir -p {QUALITY_DIR}
-        (checkm2 predict --genes --threads {threads} \
-            --input {params.indir} \
-            -x .faa \
-            --output-directory {QUALITY_DIR} \
-            --database_path {params.db} --force) &> {log}
-        mv {QUALITY_DIR}/quality_report.tsv {output.summary}
-        """
+if INPUT_QUALITY:
+    rule import_checkm2_quality:
+        conda: ENV["python"]
+        input:
+            quality=INPUT_QUALITY
+        output:
+            summary=QUALITY_DIR / "checkm2_summary.tsv"
+        benchmark:
+            str(BENCHMARKS / "checkm2.benchmark.txt")
+        shell:
+            r"""
+            python {workflow.basedir}/scripts/import_external_results.py \
+                --kind quality \
+                --input {input.quality} \
+                --output {output.summary}
+            """
+else:
+    rule run_checkm2:
+        conda: ENV["checkm2"]
+        input:
+            orfs=lambda wc: expand(str(ORF_DIR / "faa" / "{sample}.faa"), sample=get_active_samples(wc))
+        output:
+            summary=QUALITY_DIR / "checkm2_summary.tsv"
+        benchmark:
+            str(BENCHMARKS / "checkm2.benchmark.txt")
+        params:
+            indir=ORF_DIR / "faa",
+            db=str(CHECKM2_DB / "uniref100.KO.1.dmnd"),
+        log:
+            str(LOGS / "checkm2.log")
+        threads: min(config.get("max_threads", {}).get("checkm2", 8), THREADS)
+        shell:
+            r"""
+            mkdir -p {QUALITY_DIR}
+            (checkm2 predict --genes --threads {threads} \
+                --input {params.indir} \
+                -x .faa \
+                --output-directory {QUALITY_DIR} \
+                --database_path {params.db} --force) &> {log}
+            mv {QUALITY_DIR}/quality_report.tsv {output.summary}
+            """
 
 
 

@@ -28,14 +28,15 @@ def get_summary_inputs(wildcards):
     if "park" in SELECTED:
         inputs["park"] = expand(get_dir("park", "03_quality/parks_score") / "{sample}.parks.tsv", sample=active_samples)
     if "orfs" in SELECTED:
-        inputs["orfs"] = expand(get_dir("orfs", "02_genes/orfs") / "{sample}.orfs.tsv", sample=active_samples)
+        inputs["orfs"] = expand(get_dir("orfs", "02_genes/orfs") / "orf_count" / "{sample}.orfs.tsv", sample=active_samples)
     if "trna" in SELECTED:
         inputs["trnas"] = expand(get_dir("trna", "02_genes/trna") / "{sample}.tRNA.tsv", sample=active_samples)
     if "rrna" in SELECTED:
         inputs["rrnas"] = expand(get_dir("rrna", "02_genes/rrna") / "{sample}.rRNA.tsv", sample=active_samples)
     if "gtdb" in SELECTED:
         inputs["gtdb"] = get_dir("gtdbtk", "04_taxonomy/gtdbtk") / "gtdb.merged_summary.tsv"
-        inputs["gtdb_log"] = get_dir("logs", "logs") / "gtdbtk.log"
+        if not config.get("gtdb_version"):
+            inputs["gtdb_log"] = get_dir("logs", "logs") / "gtdbtk.log"
     if "rrna16S" in SELECTED:
         inputs["r16s"] = expand(get_dir("r16s", "04_taxonomy/16S") / "{sample}.16S.tsv", sample=active_samples)
     
@@ -59,6 +60,7 @@ rule collect_summary:
             f"--trnas {input.trnas}" if hasattr(input, "trnas") else "",
             f"--rrnas {input.rrnas}" if hasattr(input, "rrnas") else "",
             f"--gtdb {input.gtdb}" if hasattr(input, "gtdb") else "",
+            f"--gtdb-version {config.get('gtdb_version')}" if config.get("gtdb_version") else "",
             f"--gtdb-log {input.gtdb_log}" if hasattr(input, "gtdb_log") else "",
             f"--16s {input.r16s}" if hasattr(input, "r16s") else "",
         ])
