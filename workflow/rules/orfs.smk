@@ -2,6 +2,7 @@
 
 ORF_DIR = get_dir("orfs", "02_genes/orfs")
 GENE_INFO_TSV = OUTPUT_DIR / "02_genes" / "gene_info.tsv"
+CODING_DENSITY_DIR = ORF_DIR / "coding_density"
 
 rule orfs_prodigal:
     conda: ENV["prodigal"]
@@ -34,5 +35,20 @@ rule gene_info:
         python {workflow.basedir}/scripts/gene_info.py \
             --gff {input.gff} \
             --faa {input.faa} \
+            --output {output.tsv}
+        """
+
+rule coding_density:
+    conda: ENV["python"]
+    input:
+        gff=str(ORF_DIR / "gff" / "{sample}.gff"),
+        seqkit=str(STATS_DIR / "{sample}.seqkit.tsv")
+    output:
+        tsv=str(CODING_DENSITY_DIR / "{sample}.coding_density.tsv")
+    shell:
+        r"""
+        python {workflow.basedir}/scripts/coding_density.py \
+            --gff {input.gff} \
+            --seqkit {input.seqkit} \
             --output {output.tsv}
         """

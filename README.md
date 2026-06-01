@@ -104,11 +104,10 @@ magport report --input_dir <mags_dir> --output_dir <results_dir> --input_taxonom
 ```
 To use existing CheckM2 quality assessments, prepare a TSV file with the following format:
 
-```genome    completeness    contamination   Coding_Density
-MAG_001       95.0           2.0             35.0
-MAG_002       85.0           5.0             30.0
+```genome    completeness    contamination
+MAG_001       95.0           2.0
+MAG_002       85.0           5.0
 ```
-The Coding_Density column is optional but can be included if you want to provide that information as well. If it's not included, MAGport will simply skip that part of the quality assessment.
 
 Then, run the pipeline with the `--input_quality` option:
 
@@ -247,8 +246,8 @@ results/
 │   └── trna/            # Predicted tRNAs
 ├── 03_quality/           # Quality assessment
 │   ├── checkm/          # CheckM2 results
-│   ├── gunc/            # Contamination assessment
-│   ├── park/            # MIMAG quality score
+│   ├── gunc/            # Chimerism detection
+│   ├── parks_score/     # Parks quality score (reduced)
 │   └── mimag/           # MIMAG compliance report
 ├── 04_taxonomy/          # Taxonomic classification
 │   ├── gtdbtk/          # GTDB-Tk results

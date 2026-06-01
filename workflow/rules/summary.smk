@@ -29,6 +29,8 @@ def get_summary_inputs(wildcards):
         inputs["park"] = expand(get_dir("park", "03_quality/parks_score") / "{sample}.parks.tsv", sample=active_samples)
     if "orfs" in SELECTED:
         inputs["orfs"] = expand(get_dir("orfs", "02_genes/orfs") / "orf_count" / "{sample}.orfs.tsv", sample=active_samples)
+    if "stats" in SELECTED and "orfs" in SELECTED:
+        inputs["coding_density"] = expand(get_dir("orfs", "02_genes/orfs") / "coding_density" / "{sample}.coding_density.tsv", sample=active_samples)
     if "trna" in SELECTED:
         inputs["trnas"] = expand(get_dir("trna", "02_genes/trna") / "{sample}.tRNA.tsv", sample=active_samples)
     if "rrna" in SELECTED:
@@ -57,6 +59,7 @@ rule collect_summary:
             f"--mimag {input.mimag}" if hasattr(input, "mimag") else "",
             f"--park {input.park}" if hasattr(input, "park") else "",
             f"--orfs {input.orfs}" if hasattr(input, "orfs") else "",
+            f"--coding-density {input.coding_density}" if hasattr(input, "coding_density") else "",
             f"--trnas {input.trnas}" if hasattr(input, "trnas") else "",
             f"--rrnas {input.rrnas}" if hasattr(input, "rrnas") else "",
             f"--gtdb {input.gtdb}" if hasattr(input, "gtdb") else "",

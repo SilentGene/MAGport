@@ -35,6 +35,7 @@ class DataLoader:
         self.trnas_data = self._load_multiple_files(args.trnas, self._parse_trnas, ".tRNA.tsv") if args.trnas else {}
         self.rrnas_data = self._load_multiple_files(args.rrnas, self._parse_rrnas, ".rRNA.tsv") if args.rrnas else {}
         self.s16_data = self._load_multiple_files(args._16s, self._parse_16s, ".16S.tsv") if args._16s else {}
+        self.coding_density_data = self._load_multiple_files(args.coding_density, self._parse_coding_density, ".coding_density.tsv") if args.coding_density else {}
 
     def _load_checkm(self):
         data = {}
@@ -45,8 +46,7 @@ class DataLoader:
                 if key:
                     data[key] = {
                         "Completeness": row.get("Completeness", ""),
-                        "Contamination": row.get("Contamination", ""),
-                        "coding_density": row.get("Coding_Density", "")
+                        "Contamination": row.get("Contamination", "")
                     }
         return data
 
@@ -161,12 +161,23 @@ class DataLoader:
         except Exception:
             return {"16S_NCBI_taxonomy": "", "16S_blastn_identity": ""}
 
+    @staticmethod
+    def _parse_coding_density(path):
+        try:
+            with open(path) as f:
+                reader = csv.DictReader(f, delimiter='\t')
+                row = next(reader)
+                return {"coding_density": row.get("coding_density", "")}
+        except Exception:
+            return {"coding_density": ""}
+
     def get_mag_data(self, mag):
         """获取单个MAG的所有数据"""
         
         data = {"ID": mag}
         data.update(self.seqkit_data.get(mag, {}))
         data.update(self.orfs_data.get(mag, {}))
+        data.update(self.coding_density_data.get(mag, {}))
         data.update(self.checkm_data.get(mag, {}))
         data.update(self.gunc_data.get(mag, {}))
         data.update(self.park_data.get(mag, {}))
@@ -203,7 +214,8 @@ def main(args):
     # 收集所有出现过的 MAG ID
     all_mag_ids = set()
     for d in [loader.seqkit_data, loader.orfs_data, loader.park_data, 
-              loader.mimag_data, loader.trnas_data, loader.rrnas_data, loader.s16_data]:
+              loader.mimag_data, loader.trnas_data, loader.rrnas_data, loader.s16_data,
+              loader.coding_density_data]:
         all_mag_ids.update(d.keys())
     
     # 也要从共享数据中收集（如果有 ID_new 或 user_genome）
@@ -264,6 +276,7 @@ if __name__ == "__main__":
     parser.add_argument("--mimag", nargs='+', required=False, help="MIMAG classification TSV files")
     parser.add_argument("--park", nargs='+', required=False, help="Park score TSV files")
     parser.add_argument("--orfs", nargs='+', required=False, help="ORFs count TSV files")
+    parser.add_argument("--coding-density", nargs='+', required=False, help="Coding density TSV files")
     parser.add_argument("--trnas", nargs='+', required=False, help="tRNA count TSV files")
     parser.add_argument("--rrnas", nargs='+', required=False, help="rRNA count TSV files")
     parser.add_argument("--gtdb", required=False, help="GTDB-tk merged taxonomy TSV file")
