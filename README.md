@@ -255,6 +255,52 @@ results/
 └── logs/                # Runtime logs
 ```
 
+## 🔄 Workflow
+
+```mermaid
+flowchart TD
+    A["Run magport report"] --> B["Parse CLI options and write run configuration"]
+    B --> C["Snakemake loads selected modules and database paths"]
+    C --> D["Verify required databases for enabled modules"]
+    D --> E["Check input MAG FASTA files and contig IDs"]
+    E --> F{"GTDB taxonomy provided?"}
+    F -- "Yes" --> G["Import existing GTDB taxonomy"]
+    F -- "No" --> H["Run GTDB-Tk classification"]
+    G --> I{"Rename pattern set?"}
+    H --> I
+    I -- "Yes" --> J["Rename MAGs using GTDB taxonomy and update downstream sample IDs"]
+    I -- "No" --> K["Use original MAG names"]
+    J --> L["Run selected analysis modules"]
+    K --> L
+    L --> M["SeqKit genome statistics"]
+    L --> N{"CheckM2 quality provided?"}
+    N -- "Yes" --> O["Import existing CheckM2 quality"]
+    N -- "No" --> P["Run CheckM2 quality assessment"]
+    L --> Q["Run GUNC chimerism detection"]
+    L --> R["Predict rRNA with barrnap"]
+    L --> S["Scan tRNA with tRNAscan-SE"]
+    L --> T["Predict ORFs with Prodigal"]
+    R --> U["BLAST longest 16S rRNA against NCBI 16S"]
+    M --> V["Calculate Parks score"]
+    O --> V
+    P --> V
+    O --> W["Classify MIMAG quality"]
+    P --> W
+    R --> W
+    S --> W
+    M --> X["Collect module outputs into MAGport_summary.tsv"]
+    O --> X
+    P --> X
+    Q --> X
+    T --> X
+    U --> X
+    V --> X
+    W --> X
+    G --> X
+    H --> X
+    X --> Y["Generate interactive MAGport_report.html"]
+```
+
 ## 📝 Notes
 
 - First run creates Conda environments under `~/.snakemake/conda/` or the path specified by `--conda-prefix`
