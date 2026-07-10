@@ -30,14 +30,22 @@ else:
         benchmark:
             str(BENCHMARKS / "checkm2.benchmark.txt")
         params:
-            indir=ORF_DIR / "faa",
+            indir=lambda wc: OUTPUT_DIR / ".append_inputs" / "checkm2_faa" if APPEND_MODE else ORF_DIR / "faa",
             db=str(CHECKM2_DB / "uniref100.KO.1.dmnd"),
+            append_mode=lambda wc: APPEND_MODE,
         log:
             str(LOGS / "checkm2.log")
         threads: min(config.get("max_threads", {}).get("checkm2", 8), THREADS)
         shell:
             r"""
             mkdir -p {QUALITY_DIR}
+            if [ "{params.append_mode}" = "True" ]; then
+                rm -rf {params.indir}
+                mkdir -p {params.indir}
+                for f in {input.orfs}; do
+                    ln -sf "$f" {params.indir}/$(basename "$f")
+                done
+            fi
             (checkm2 predict --genes --threads {threads} \
                 --input {params.indir} \
                 -x .faa \

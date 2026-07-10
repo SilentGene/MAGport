@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import shlex
+import shutil
 import sys
 from pathlib import Path
 from typing import Optional
@@ -19,6 +20,57 @@ DEFAULT_MODULES = "stats,quality,park,gunc,rrna,trna,orfs,gtdb,rrna16S,mimag"
 
 def _abs(p: str) -> str:
     return str(Path(p).expanduser().resolve())
+
+
+def _read_summary_ids(summary_path: Path) -> set[str]:
+    import csv
+
+    if not summary_path.exists():
+        return set()
+    with open(summary_path, "r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        if not reader.fieldnames or "ID" not in reader.fieldnames:
+            return set()
+        return {row["ID"] for row in reader if row.get("ID")}
+
+
+def _read_previous_input_ids(output_dir: Path, existing_summary_ids: set[str]) -> set[str]:
+    rename_map = output_dir / "rename_map.tsv"
+    if not rename_map.exists():
+        return existing_summary_ids
+
+    import csv
+
+    original_ids = set()
+    with open(rename_map, "r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for row in reader:
+            if row.get("new_id") in existing_summary_ids and row.get("original_id"):
+                original_ids.add(row["original_id"])
+    return original_ids or existing_summary_ids
+
+
+def _discover_sample_ids(input_dir: str, file_extension: str) -> set[str]:
+    ext = file_extension
+    return {
+        p.name[:-len(ext)]
+        for p in Path(input_dir).glob(f"**/*{ext}")
+        if p.is_file()
+    }
+
+
+def _same_path(a: Optional[str], b: Optional[str]) -> bool:
+    if not a or not b:
+        return False
+    return _abs(a) == _abs(b)
+
+
+def _same_optional_path(a: Optional[str], b: Optional[str]) -> bool:
+    if not a and not b:
+        return True
+    if not a or not b:
+        return False
+    return _abs(a) == _abs(b)
 
 
 @app.command(name="report")
@@ -59,6 +111,50 @@ def main(
     with open(default_config_path, "r", encoding="utf-8") as f:
         config_data = yaml.safe_load(f)
 
+    # Detect append mode before overwriting the previous run's config.yaml.
+    summary_name = config_data.get("output_files", {}).get("summary", "MAGport_summary.tsv")
+    summary_path = Path(output_dir) / summary_name
+    previous_config_path = Path(output_dir) / "config.yaml"
+    previous_summary_path = Path(output_dir) / f".{summary_name}.previous.tsv"
+    append_samples: list[str] = []
+    append_mode = False
+
+    if summary_path.exists() and previous_config_path.exists() and not force_rerun:
+        try:
+            with open(previous_config_path, "r", encoding="utf-8") as f:
+                previous_config = yaml.safe_load(f) or {}
+        except Exception:
+            previous_config = {}
+
+        same_run_location = (
+            _same_path(previous_config.get("input_dir"), input_dir)
+            and _same_path(previous_config.get("output_dir"), output_dir)
+            and previous_config.get("file_extension", file_extension) == file_extension
+        )
+        same_analysis_options = (
+            previous_config.get("modules", DEFAULT_MODULES) == modules
+            and previous_config.get("rename_pattern") == rename_pattern
+            and previous_config.get("gtdb_version") == gtdb_version
+            and _same_optional_path(previous_config.get("input_taxonomy"), input_taxonomy)
+            and _same_optional_path(previous_config.get("input_quality"), input_quality)
+        )
+
+        if same_run_location and same_analysis_options and not rename_pattern:
+            existing_summary_ids = _read_summary_ids(summary_path)
+            previous_input_ids = _read_previous_input_ids(Path(output_dir), existing_summary_ids)
+            current_input_ids = _discover_sample_ids(input_dir, file_extension)
+            append_samples = sorted(current_input_ids - previous_input_ids)
+
+            if append_samples:
+                append_mode = True
+                shutil.copy2(summary_path, previous_summary_path)
+                console.print(
+                    f"[yellow]Append mode enabled: detected {len(append_samples)} new genome(s).[/yellow]"
+                )
+            else:
+                console.print("[green]No new genomes detected. Existing MAGport_summary.tsv is up to date.[/green]")
+                raise typer.Exit(0)
+
     # 2. 用 CLI 参数覆盖/补充
     config_data["input_dir"] = input_dir
     config_data["output_dir"] = output_dir
@@ -72,6 +168,10 @@ def main(
         config_data["gtdb_version"] = gtdb_version
     if input_quality:
         config_data["input_quality"] = input_quality
+    if append_mode:
+        config_data["append_mode"] = True
+        config_data["append_samples"] = append_samples
+        config_data["previous_summary"] = str(previous_summary_path)
 
     # 3. 写入输出目录下的 config.yaml
     new_config_path = Path(output_dir) / "config.yaml"

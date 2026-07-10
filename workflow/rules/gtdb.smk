@@ -29,20 +29,29 @@ else:
         benchmark:
             str(BENCHMARKS / "gtdbtk.benchmark.txt")
         params:
-            indir=OUTPUT_DIR / "00_input_genomes",
+            indir=lambda wc: OUTPUT_DIR / ".append_inputs" / "gtdb_genomes" if APPEND_MODE else OUTPUT_DIR / "00_input_genomes",
             pplacer=lambda w: min(THREADS, config.get("max_threads", {}).get("gtdbtk_pplacer", 3)),
             db=GTDBTK_DB,
-            suffix=EXT
+            suffix=EXT,
+            append_mode=lambda wc: APPEND_MODE
         log:
             str(LOGS / "gtdbtk.log")
         threads: min(THREADS, config.get("max_threads", {}).get("gtdbtk", 32))
         shell:
             r"""
             mkdir -p {GTDB_DIR}
+            if [ "{params.append_mode}" = "True" ]; then
+                rm -rf {params.indir}
+                mkdir -p {params.indir}
+                for f in {input.mag}; do
+                    ln -sf "$f" {params.indir}/$(basename "$f")
+                done
+                rm -f {GTDB_DIR}/gtdbtk.ar53.summary.tsv {GTDB_DIR}/gtdbtk.bac120.summary.tsv
+            fi
             # Set GTDBTK_DATA_PATH environment variable
             export GTDBTK_DATA_PATH={params.db}
             
-            # Run GTDB-Tk classify_wf on all genomes
+            # Run GTDB-Tk classify_wf on selected genomes
             gtdbtk classify_wf \
                 --genome_dir {params.indir} \
                 --out_dir {GTDB_DIR} \

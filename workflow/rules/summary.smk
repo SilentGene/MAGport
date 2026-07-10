@@ -41,6 +41,8 @@ def get_summary_inputs(wildcards):
             inputs["gtdb_log"] = get_dir("logs", "logs") / "gtdbtk.log"
     if "rrna16S" in SELECTED:
         inputs["r16s"] = expand(get_dir("r16s", "04_taxonomy/16S") / "{sample}.16S.tsv", sample=active_samples)
+    if config.get("append_mode") and config.get("previous_summary"):
+        inputs["previous_summary"] = config.get("previous_summary")
     
     return inputs
 
@@ -66,6 +68,7 @@ rule collect_summary:
             f"--gtdb-version {config.get('gtdb_version')}" if config.get("gtdb_version") else "",
             f"--gtdb-log {input.gtdb_log}" if hasattr(input, "gtdb_log") else "",
             f"--16s {input.r16s}" if hasattr(input, "r16s") else "",
+            f"--previous-summary {input.previous_summary}" if hasattr(input, "previous_summary") else "",
         ])
     shell:
         r"""

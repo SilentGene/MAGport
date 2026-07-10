@@ -72,6 +72,43 @@ Start with a dry run to test:
 magport report -i <mags_dir> -o <results_dir> --threads 4 --snake_args "-n"
 ```
 
+### Append Mode for New Genomes
+
+If a previous run completed successfully and `<results_dir>/MAGport_summary.tsv` already exists, MAGport can automatically enter append mode when you run the same command again with the same `--input_dir`, `--output_dir`, `--file_extension`, module selection, and external input options.
+
+In append mode, MAGport reads the existing `MAGport_summary.tsv`, checks which genome IDs have already been reported, scans the current `--input_dir`, and runs the workflow only for newly added genomes. The new rows are then merged with the previous summary to produce an updated `MAGport_summary.tsv` and report.
+
+For example:
+
+```bash
+# First run
+magport report --input_dir <mags_dir> \
+        --output_dir <results_dir> \
+        --threads 16 \
+        --file_extension .fa
+
+# Add new .fa genomes into <mags_dir>, then run the same command again
+magport report --input_dir <mags_dir> \
+        --output_dir <results_dir> \
+        --threads 16 \
+        --file_extension .fa
+```
+
+When new genomes are detected, MAGport prints a message like:
+
+```text
+Append mode enabled: detected 3 new genome(s).
+```
+
+If no new genomes are found, MAGport exits without rerunning the workflow. To intentionally rerun everything, use `--force_rerun`.
+
+Notes and limitations:
+
+- Append mode is automatic; there is no extra flag to enable it.
+- The previous summary is copied to a hidden backup file named `.MAGport_summary.tsv.previous.tsv` inside the output directory before merging.
+- Append mode is only used when the run configuration matches the previous run. If you change modules, external taxonomy/quality inputs, file extension, input directory, or output directory, MAGport treats it as a normal run.
+- Append mode is currently disabled when `--rename_pattern` is used, because dynamic renaming depends on the full set of genomes and may change incremental names.
+
 ### Dynamic MAG Renaming
 
 I’m sure you’ve been frustrated by how messy MAG names can get. Now, you can use the `--rename_pattern` option to give your MAGs clean, consistent names. When specified, MAGport will dynamically rename the genomes after the GTDB-Tk classification step, and all downstream analysis will be performed on the newly named genomes.
@@ -254,6 +291,35 @@ results/
 │   └── 16S/             # 16S rRNA-based taxonomy
 └── logs/                # Runtime logs
 ```
+
+### MAGport_summary.tsv Columns
+
+The final `MAGport_summary.tsv` table gives one row per MAG and combines genome statistics, gene content, quality metrics, and taxonomy.
+
+| Column | Brief description |
+|--------|-------------------|
+| `ID` | MAG/genome identifier. |
+| `num_contigs` | Number of contigs. |
+| `genome_size_bp` | Total genome size in bp. |
+| `N50` | Assembly N50 length. |
+| `GC` | GC content percentage. |
+| `Ambiguous_bases` | Count of ambiguous bases. |
+| `num_ORFs` | Predicted protein-coding genes. |
+| `Completeness` | CheckM2 completeness estimate. |
+| `Contamination` | CheckM2 contamination estimate. |
+| `coding_density` | Fraction of genome in coding regions. |
+| `pass_GUNC` | GUNC chimerism pass/fail status. |
+| `Parks_score_reduced` | Reduced Parks genome quality score. |
+| `MIMAG_reduced_level` | MIMAG level from completeness/contamination only. |
+| `MIMAG_full_level` | MIMAG level including rRNA/tRNA requirements. |
+| `num_tRNAs` | Number of predicted tRNAs. |
+| `16S` | Number of predicted 16S rRNA genes. |
+| `23S` | Number of predicted 23S rRNA genes. |
+| `5S` | Number of predicted 5S rRNA genes. |
+| `16S_NCBI_taxonomy` | Best 16S BLASTN taxonomy hit. |
+| `16S_blastn_identity` | Percent identity of best 16S BLASTN hit. |
+| `GTDB_taxonomy` or `Taxonomy_GTDB_R<version>` | GTDB-Tk taxonomic classification. |
+| `GTDB_novelty` | Lowest missing GTDB rank or known status. |
 
 ## 🔄 Workflow
 

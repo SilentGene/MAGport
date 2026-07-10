@@ -115,10 +115,14 @@ class DataLoader:
     def _parse_mimag(path):
         try:
             with open(path) as f:
-                next(f)
-                return {"MIMAG_reduced_level": next(f).strip()}
+                reader = csv.DictReader(f, delimiter='\t')
+                row = next(reader)
+                return {
+                    "MIMAG_reduced_level": row.get("MIMAG_reduced_level", ""),
+                    "MIMAG_full_level": row.get("MIMAG_full_level", "")
+                }
         except Exception:
-            return {"MIMAG_reduced_level": ""}
+            return {"MIMAG_reduced_level": "", "MIMAG_full_level": ""}
 
     @staticmethod
     def _parse_trnas(path):
@@ -188,6 +192,20 @@ class DataLoader:
         data.update(self.s16_data.get(mag, {}))
         return data
 
+def _load_previous_summary(path):
+    if not path:
+        return [], []
+
+    previous_path = Path(path)
+    if not previous_path.exists():
+        return [], []
+
+    with open(previous_path, "r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        rows = [dict(row) for row in reader]
+        return reader.fieldnames or [], rows
+
+
 def main(args):
     # 解析 GTDB_VERSION
     gtdb_version = args.gtdb_version or ""
@@ -230,7 +248,7 @@ def main(args):
     # 输出
     columns = [
         "ID", "num_contigs", "genome_size_bp", "N50", "GC", "Ambiguous_bases",
-        "num_ORFs", "Completeness", "Contamination", "coding_density", "pass_GUNC", "Parks_score_reduced", "MIMAG_reduced_level",
+        "num_ORFs", "Completeness", "Contamination", "coding_density", "pass_GUNC", "Parks_score_reduced", "MIMAG_reduced_level", "MIMAG_full_level",
         "num_tRNAs", "16S", "23S", "5S", "16S_NCBI_taxonomy", "16S_blastn_identity", gtdb_col_name, "GTDB_novelty"
     ]
     
@@ -257,15 +275,39 @@ def main(args):
         else:
             return "NA"
 
+    previous_columns, previous_rows = _load_previous_summary(args.previous_summary)
+    output_rows = []
+    seen_ids = set()
+
+    for row in previous_rows:
+        mag_id = row.get("ID")
+        if mag_id:
+            output_rows.append(row)
+            seen_ids.add(mag_id)
+
+    for row in mags:
+        taxonomy = row.get("GTDB_taxonomy", "")
+        row["GTDB_novelty"] = get_gtdb_novelty(taxonomy)
+        # 将GTDB_taxonomy改名为动态版本名
+        if gtdb_col_name != "GTDB_taxonomy":
+            row[gtdb_col_name] = row.pop("GTDB_taxonomy", "")
+
+        mag_id = row.get("ID")
+        if mag_id in seen_ids:
+            output_rows = [existing for existing in output_rows if existing.get("ID") != mag_id]
+        elif mag_id:
+            seen_ids.add(mag_id)
+        output_rows.append(row)
+
+    output_columns = list(columns)
+    for col in previous_columns:
+        if col not in output_columns:
+            output_columns.append(col)
+
     with open(args.output, 'w', newline='') as f:
-        w = csv.DictWriter(f, fieldnames=columns, delimiter='\t', extrasaction='ignore')
+        w = csv.DictWriter(f, fieldnames=output_columns, delimiter='\t', extrasaction='ignore')
         w.writeheader()
-        for row in mags:
-            taxonomy = row.get("GTDB_taxonomy", "")
-            row["GTDB_novelty"] = get_gtdb_novelty(taxonomy)
-            # 将GTDB_taxonomy改名为动态版本名
-            if gtdb_col_name != "GTDB_taxonomy":
-                row[gtdb_col_name] = row.pop("GTDB_taxonomy", "")
+        for row in output_rows:
             w.writerow(row)
 
 if __name__ == "__main__":
@@ -285,5 +327,6 @@ if __name__ == "__main__":
     parser.add_argument("--16s", dest="_16s", nargs='+', required=False, help="16S BLAST taxonomy TSV files")
     parser.add_argument("--output", required=True, help="Output summary TSV file")
     parser.add_argument("--results", required=True, help="Results directory")
+    parser.add_argument("--previous-summary", required=False, help="Previous MAGport_summary.tsv to merge with new results")
     args = parser.parse_args()
     main(args)

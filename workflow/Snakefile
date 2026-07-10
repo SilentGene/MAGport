@@ -2,6 +2,7 @@
 # Orchestrates modular MAG characterization
 
 import os
+import sys
 from pathlib import Path
 
 configfile: "config/config.yaml"
@@ -88,8 +89,21 @@ onstart:
         sys.exit(1)
 
 # Discover MAGs
-MAGS = sorted([str(p) for p in INPUT_DIR.glob(f"**/*{EXT}")])  # e.g. ['/path/to/MAG1.fasta', '/path/to/MAG2.fasta', ...]
-SAMPLES = {Path(p).name[:-len(EXT)]: str(Path(p).resolve()) for p in MAGS}  # e.g. {'MAG1': '/path/to/MAG1.fasta', ...}
+ALL_MAGS = sorted([str(p) for p in INPUT_DIR.glob(f"**/*{EXT}")])  # e.g. ['/path/to/MAG1.fasta', '/path/to/MAG2.fasta', ...]
+ALL_SAMPLES = {Path(p).name[:-len(EXT)]: str(Path(p).resolve()) for p in ALL_MAGS}  # e.g. {'MAG1': '/path/to/MAG1.fasta', ...}
+
+APPEND_MODE = bool(config.get("append_mode", False))
+APPEND_SAMPLE_LIST = sorted(config.get("append_samples", []))
+if APPEND_MODE:
+    missing_append_samples = [s for s in APPEND_SAMPLE_LIST if s not in ALL_SAMPLES]
+    if missing_append_samples:
+        print(f"[MAGport] Append mode requested samples not found in {INPUT_DIR}: {', '.join(missing_append_samples)}")
+        sys.exit(1)
+    SAMPLES = {s: ALL_SAMPLES[s] for s in APPEND_SAMPLE_LIST}
+else:
+    SAMPLES = dict(ALL_SAMPLES)
+
+MAGS = sorted(SAMPLES.values())
 SAMPLE_LIST = sorted(SAMPLES.keys())  # e.g. ['MAG1', 'MAG2', ...]
 
 if not MAGS:
@@ -99,7 +113,10 @@ if not MAGS:
     else:
         print(f"[MAGport] No MAGs found in {INPUT_DIR}. Skipping execution but proceeding for DB download.")
 else:
-    print(f"[MAGport] Found {len(MAGS)} MAGs in {INPUT_DIR} with extension {EXT}.")
+    if APPEND_MODE:
+        print(f"[MAGport] Append mode: running {len(MAGS)} new MAGs from {INPUT_DIR} with extension {EXT}.")
+    else:
+        print(f"[MAGport] Found {len(MAGS)} MAGs in {INPUT_DIR} with extension {EXT}.")
 # Targets
 def per_mag_outputs(module: str):
     outs = []

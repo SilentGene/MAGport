@@ -12,14 +12,22 @@ rule gunc_run_all:
     benchmark:
         str(BENCHMARKS / "gunc.benchmark.txt")
     params:
-        indir=ORF_DIR / "faa",
-        db=str(GUNC_DB / "gunc_db_gtdb95.dmnd")
+        indir=lambda wc: OUTPUT_DIR / ".append_inputs" / "gunc_faa" if APPEND_MODE else ORF_DIR / "faa",
+        db=str(GUNC_DB / "gunc_db_gtdb95.dmnd"),
+        append_mode=lambda wc: APPEND_MODE
     log:
         str(LOGS / "gunc.log")
     threads: min(config.get("max_threads", {}).get("gunc", 8), THREADS)
     shell:
         r"""
         mkdir -p {GUNC_DIR}
+        if [ "{params.append_mode}" = "True" ]; then
+            rm -rf {params.indir}
+            mkdir -p {params.indir}
+            for f in {input.orfs}; do
+                ln -sf "$f" {params.indir}/$(basename "$f")
+            done
+        fi
         gunc run --gene_calls \
             --input_dir {params.indir} \
             --file_suffix .faa \

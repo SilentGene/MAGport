@@ -7,7 +7,8 @@ from pathlib import Path
 # Usage: python mimag.py quality.tsv trna.tsv rrna.tsv out.tsv --mag MAG1
 
 """MIMAG classification
-HQ: Completeness > 90, Contamination < 5
+Reduced HQ: Completeness > 90, Contamination < 5
+Full HQ: Reduced HQ plus 23S, 16S, 5S rRNA genes and at least 18 tRNAs
 MQ: Completeness >= 50, Contamination < 10
 LQ: else
 """
@@ -44,17 +45,24 @@ def main(quality_tsv: Path, trna_tsv: Path, rrna_tsv: Path, out_tsv: Path, mag_n
             has_23s = int(vals[2]) > 0
         except Exception:
             pass
-    quality = "LQ"
+    reduced_quality = "LQ"
     if comp > 90 and cont < 5:
-        quality = "HQ"
+        reduced_quality = "HQ"
     elif comp >= 50 and cont < 10:
-        quality = "MQ"
+        reduced_quality = "MQ"
+
+    full_quality = "LQ"
+    if comp > 90 and cont < 5 and has_5s and has_16s and has_23s and trna_count >= 18:
+        full_quality = "HQ"
+    elif comp >= 50 and cont < 10:
+        full_quality = "MQ"
+
     out_tsv.parent.mkdir(parents=True, exist_ok=True)
     with open(out_tsv, 'w', newline='') as f:
         w = csv.writer(f, delimiter='\t')
-        w.writerow(["MIMAG_reduced_level"])
-        w.writerow([quality])
-    print(f"MIMAG for {mag_name}: {quality} (comp={comp}, cont={cont}, tRNA={trna_count}, 5S={has_5s},16S={has_16s},23S={has_23s})")
+        w.writerow(["MIMAG_reduced_level", "MIMAG_full_level"])
+        w.writerow([reduced_quality, full_quality])
+    print(f"MIMAG for {mag_name}: reduced={reduced_quality}, full={full_quality} (comp={comp}, cont={cont}, tRNA={trna_count}, 5S={has_5s},16S={has_16s},23S={has_23s})")
 
 if __name__ == "__main__":
     import argparse
